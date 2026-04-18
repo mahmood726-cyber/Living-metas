@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MetaExtract v1.0 — Effect Estimate Extractor</title>
+<style>
+  :root { --bg:#f8fafc;--bg2:#ffffff;--bg3:#f1f5f9;--text:#0f172a;--text2:#475569;--muted:#64748b;--border:#e2e8f0;--accent:#2563eb;--success:#16a34a;--warning:#d97706;--danger:#dc2626;--radius:8px; }
+  body.dark { --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--text:#f1f5f9;--text2:#cbd5e1;--muted:#94a3b8;--border:#334155;--accent:#3b82f6;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444; }
+  *{box-sizing:border-box;margin:0;padding:0;} body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+  .header{background:linear-gradient(135deg,#059669 0%,#2563eb 100%);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;color:white;}
+  .header h1{font-size:1.3rem;} .header h1 span{font-size:0.7rem;opacity:0.7;margin-left:6px;}
+  .container{max-width:900px;margin:0 auto;padding:20px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+  .card-title{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:10px;}
+  .btn{padding:8px 16px;border:none;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;}
+  .btn-primary{background:var(--accent);color:white;} .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+  textarea{width:100%;min-height:120px;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+  input{padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:0.85rem;}
+  table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+  th{text-align:left;padding:8px;background:var(--bg3);border-bottom:2px solid var(--border);font-weight:600;}
+  td{padding:6px 8px;border-bottom:1px solid var(--border);}
+  .badge{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;}
+  .badge-green{background:#dcfce7;color:#16a34a;} .badge-amber{background:#fef3c7;color:#d97706;} .badge-red{background:#fee2e2;color:#dc2626;}
+  mark.inc{background:#dcfce7;padding:1px 2px;border-radius:2px;} mark.val{background:#dbeafe;padding:1px 2px;border-radius:2px;font-weight:600;}
+  .result-card{border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;background:var(--bg3);}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>MetaExtract<span>v1.0 — Effect Estimate Extractor</span></h1>
+  <button class="btn" style="color:white;background:transparent;border:1px solid rgba(255,255,255,0.3);" onclick="document.body.classList.toggle('dark')">Theme</button>
+</div>
+<div class="container">
+
+<div class="card">
+  <div class="card-title">1. Paste Abstract or Results Text</div>
+  <textarea id="inputText" placeholder="Paste any abstract, results section, or CT.gov text here...
+
+Example: 'The hazard ratio for the primary composite endpoint was 0.77 (95% CI 0.61-0.96; P=0.02). Events occurred in 131/2366 (5.5%) colchicine vs 170/2379 (7.1%) placebo patients.'"></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px;">
+    <button class="btn btn-primary" onclick="extract()">Extract All</button>
+    <div style="flex:1;"></div>
+    <input id="nctInput" placeholder="Or enter NCT ID..." style="width:180px;">
+    <button class="btn btn-outline" onclick="fetchNCT()">Fetch CT.gov</button>
+  </div>
+</div>
+
+<div class="card" id="resultsCard" style="display:none;">
+  <div class="card-title">2. Extracted Effect Estimates <span id="extractCount" style="font-size:0.78rem;color:var(--muted);font-weight:400;"></span></div>
+  <div id="resultsArea"></div>
+  <div style="margin-top:12px;display:flex;gap:8px;">
+    <button class="btn btn-outline" onclick="copyJSON()">Copy JSON</button>
+    <button class="btn btn-outline" onclick="copyCSV()">Copy CSV</button>
+    <button class="btn btn-outline" onclick="copyForMA()">Copy for Meta-Analysis</button>
+  </div>
+</div>
+
+<div class="card" id="highlightCard" style="display:none;">
+  <div class="card-title">3. Highlighted Source Text</div>
+  <div id="highlightArea" style="font-size:0.85rem;line-height:1.8;"></div>
+</div>
+
+</div>
+
+<script>
+function escapeHtml(s){return s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+/* ══════════════════════════════════════════════════════════════
+   TextExtractor — Ported from LivingMeta / rct_data_extractor_v2
+   ══════════════════════════════════════════════════════════════ */
+const NORM_MAP={'\u2013':'-','\u2014':'-','\u2212':'-','\u00d7':'x','\u2011':'-','\u2012':'-','\uff0d':'-','\u2010':'-','\u00ad':'','\u200b':'','\u00a0':' ','\u202f':' ','\u2009':' ','\u037e':';','\ufeff':'','\u00b7':'.'};
+const normRx=new RegExp('['+Object.keys(NORM_MAP).join('')+']','g');
+function normalize(t){t=t.replace(normRx,ch=>NORM_MAP[ch]??ch);t=t.replace(/(?<!\.\d)(\d),(\d{1,2})(?!\d)/g,'$1.$2');t=t.replace(/(\d),\s*(95%?\s*CI)/gi,'$1; $2');t=t.replace(/\b(HR|OR|RR|MD|SMD|ARD|IRR|NNT|aHR|aOR)(\d)/g,'$1 $2');t=t.replace(/(?<![0-9])(-?)\.(\d)/g,'$10.$2');t=t.replace(/(\d)to(-?\d)/g,'$1 to $2');t=t.replace(/(\d)\((\d{2,3}%)/g,'$1 ($2');return t;}
+
+const N='(\\d+\\.?\\d*)',SN='(-?\\d+\\.?\\d*)',SEP='[-\\u2013\\u2014,]',TO='(?:to|[-\\u2013\\u2014])',CI='(?:95%?[\\s-]*)?(?:CI|KI|IC|BI|CrI)?';
+const RANGE={HR:[0.01,50],OR:[0.01,100],RR:[0.01,50],IRR:[0.01,50],MD:[-1e4,1e4],SMD:[-10,10],ARD:[-100,100],NNT:[1,1e4],GMR:[0.01,100]};
+function plausible(type,v,lo,hi){const r=RANGE[type]??[0.01,100];if(v<r[0]||v>r[1])return false;if(lo!=null&&hi!=null){if(lo>hi)return false;if(v<lo-0.001||v>hi+0.001)return false;if(['HR','OR','RR','IRR','GMR'].includes(type)&&lo<=0)return false;}return true;}
+
+const PATTERNS=[
+{rx:new RegExp('\\bHR\\b[,;:\\s=]+'+N+'\\s*[\\(\\[]\\s*(?:(?:IC|KI)\\s+)?'+CI+'[,:\\s]*'+N+'\\s*'+SEP+'\\s*'+N+'\\s*[\\)\\]]','i'),type:'HR'},
+{rx:new RegExp('\\bHR\\b[,;:\\s=]+'+N+'[;,]\\s*(?:95%?\\s*)?(?:CI|confidence\\s*interval)[,:\\s]+'+N+'\\s*'+TO+'\\s*'+N,'i'),type:'HR'},
+{rx:new RegExp('hazard\\s*ratio[,;:\\s=]+(?:was\\s+|of\\s+)?'+N+'\\s*\\(\\s*'+CI+'[,:\\s]*'+N+'\\s*'+TO+'\\s*'+N,'i'),type:'HR'},
+{rx:new RegExp('\\(HR[,;]\\s*'+N+'[;,]\\s*(?:95%?\\s*)?CI[,:\\s]+'+N+'\\s*'+TO+'\\s*'+N+'\\)','i'),type:'HR'},
+{rx:new RegExp('\\bHR\\b\\s+'+N+'\\s*\\(\\s*'+N+'\\s*[-\\u2013\\u2014]\\s*'+N+'\\s*\\)','i'),type:'HR'},
+{rx:new RegExp('\\baHR\\b[,;:\\s=]+'+N+'\\s*[\\(\\[]\\s*'+CI+'[,:\\s]*'+N+'\\s*'+SEP+'\\s*'+N+'\\s*[\\)\\]]','i'),type:'HR'},
+{rx:new RegExp('\\bOR\\b[,;:\\s=]+'+N+'\\s*[\\(\\[]\\s*'+CI+'[,:\\s]*'+N+'\\s*'+SEP+'\\s*'+N+'\\s*[\\)\\]]','i'),type:'OR'},
+{rx:new RegExp('odds\\s*ratio[,;:\\s=]+(?:was\\s+)?'+N+'\\s*\\(\\s*'+CI+'[,:\\s]*'+N+'\\s*'+TO+'\\s*'+N,'i'),type:'OR'},
+{rx:new RegExp('\\bOR\\b\\s+'+N+'\\s*\\(\\s*'+N+'\\s*[-\\u2013\\u2014]\\s*'+N+'\\s*\\)','i'),type:'OR'},
+{rx:new RegExp('(?:incidence\\s+)?rate\\s*ratio[,;:\\s=]+'+N+'\\s*\\(\\s*'+CI+'[,:\\s]*'+N+'\\s*[-\\u2013\\u2014]\\s*'+N,'i'),type:'IRR'},
+{rx:new RegExp('\\bRR\\b[,;:\\s=]+'+N+'\\s*[\\(\\[]\\s*'+CI+'[,:\\s]*'+N+'\\s*'+SEP+'\\s*'+N+'\\s*[\\)\\]]','i'),type:'RR'},
+{rx:new RegExp('relative\\s+risk[,;:\\s=]+(?:was\\s+)?'+N+'[;,]\\s*(?:95%?\\s*)?(?:CI|confidence)[,:\\s]+'+N+'\\s*'+TO+'\\s*'+N,'i'),type:'RR'},
+{rx:new RegExp('\\bRR\\b\\s+'+N+'\\s*\\(\\s*'+N+'\\s*[-\\u2013\\u2014]\\s*'+N+'\\s*\\)','i'),type:'RR'},
+{rx:new RegExp('\\bSMD\\b[,;:\\s=]+'+SN+'\\s*[\\(\\[]\\s*'+CI+'[,:\\s]*'+SN+'\\s+to\\s+'+SN+'\\s*[\\)\\]]','i'),type:'SMD'},
+{rx:new RegExp('\\bMD\\b[,;:\\s=]+'+SN+'\\s*[\\(\\[]\\s*'+CI+'[,:\\s]*'+SN+'\\s+to\\s+'+SN+'\\s*[\\)\\]]','i'),type:'MD'},
+{rx:new RegExp('mean\\s+difference[,;:\\s]+'+SN+'[;,]\\s*(?:95%?\\s*)?CI[,:\\s]+'+SN+'\\s+to\\s+'+SN,'i'),type:'MD'},
+{rx:new RegExp('\\bNNT\\b[,;:\\s=]+'+N+'\\s*[\\(\\[]\\s*'+CI+'[,:\\s]*'+N+'\\s*'+SEP+'\\s*'+N+'\\s*[\\)\\]]','i'),type:'NNT'},
+{rx:new RegExp('(?:absolute\\s+)?risk\\s+(?:difference|reduction)[,;:\\s=]+'+SN+'%?\\s*\\(\\s*'+CI+'[,:\\s]*'+SN+'%?\\s*'+TO+'\\s*'+SN+'%?','i'),type:'ARD'},
+];
+
+const EVENT_RX=/(\d+)\s*\/\s*(\d+)\s*(?:\(\s*\d+\.?\d*\s*%?\s*\))?\s*(?:vs\.?|versus|compared\s+(?:to|with)|and)\s*(\d+)\s*\/\s*(\d+)\s*(?:\(\s*\d+\.?\d*\s*%?\s*\))?/gi;
+const P_RX=[{rx:/[Pp]\s*-?\s*value\s*([=<>])\s*(0?\.\d+)/gi},{rx:/[Pp]\s*([=<>])\s*(0?\.\d+)/g}];
+
+function extractAll(rawText){
+  if(!rawText||rawText.length<5)return[];
+  const text=normalize(rawText.substring(0,15000));
+  const results=[],seen=new Set();
+  for(const pat of PATTERNS){const rx=new RegExp(pat.rx.source,pat.rx.flags+'g');let m;while((m=rx.exec(text))!==null){
+    const v=parseFloat(m[1]),lo=parseFloat(m[2]),hi=parseFloat(m[3]);if(!isFinite(v))continue;
+    const ciLo=isFinite(lo)?lo:null,ciHi=isFinite(hi)?hi:null;if(!plausible(pat.type,v,ciLo,ciHi))continue;
+    const key=pat.type+':'+v.toFixed(3);if(seen.has(key))continue;seen.add(key);
+    let conf=0.6;if(ciLo!=null&&ciHi!=null)conf+=0.2;if(m[0].toLowerCase().includes('95%'))conf+=0.1;
+    results.push({effectType:pat.type,value:v,ciLo,ciHi,sourceText:m[0].substring(0,200),charStart:m.index,confidence:Math.min(conf,0.99),tier:conf>=0.85?'AUTO_VERIFIED':conf>=0.7?'SPOT_CHECK':'NEEDS_REVIEW'});
+  }}
+  /* Events */
+  let em;EVENT_RX.lastIndex=0;while((em=EVENT_RX.exec(text))!==null){
+    const tE=parseInt(em[1]),tN=parseInt(em[2]),cE=parseInt(em[3]),cN=parseInt(em[4]);
+    if(tE>tN||cE>cN||tN<1||cN<1)continue;
+    results.push({effectType:'EVENTS',tE,tN,cE,cN,sourceText:em[0].substring(0,200),charStart:em.index,confidence:0.85,tier:'SPOT_CHECK'});
+  }
+  /* P-values */
+  for(const pp of P_RX){const rx=new RegExp(pp.rx.source,'gi');let pm;while((pm=rx.exec(text))!==null){
+    let pv=parseFloat(pm[2]);if(!isFinite(pv)||pv<0||pv>1)continue;if(pm[1]==='<')pv=Math.max(0,pv-0.0001);
+    let best=null,bestDist=200;for(const r of results){const dist=pm.index-(r.charStart+r.sourceText.length);if(dist>=0&&dist<bestDist){bestDist=dist;best=r;}}
+    if(best&&best.pValue==null)best.pValue=pv;
+  }}
+  results.sort((a,b)=>b.confidence-a.confidence||a.charStart-b.charStart);return results;
+}
+
+/* ── Main Extract ── */
+let lastResults = [];
+
+function extract(){
+  const text=document.getElementById('inputText').value;
+  lastResults=extractAll(text);
+  renderResults(lastResults);
+  renderHighlight(text,lastResults);
+}
+
+function renderResults(results){
+  const card=document.getElementById('resultsCard');const area=document.getElementById('resultsArea');
+  card.style.display='';
+  document.getElementById('extractCount').textContent=results.length+' estimates found';
+  if(results.length===0){area.innerHTML='<p style="color:var(--muted);">No effect estimates found. Try pasting a different text.</p>';return;}
+  let html='<table><thead><tr><th>Type</th><th>Value</th><th>95% CI</th><th>p-value</th><th>Confidence</th><th>Source Text</th></tr></thead><tbody>';
+  for(const r of results){
+    const badge=r.tier==='AUTO_VERIFIED'?'badge-green':r.tier==='SPOT_CHECK'?'badge-amber':'badge-red';
+    const valStr=r.effectType==='EVENTS'?r.tE+'/'+r.tN+' vs '+r.cE+'/'+r.cN:r.value?.toFixed(3)??'-';
+    const ciStr=r.ciLo!=null?r.ciLo.toFixed(3)+' to '+r.ciHi.toFixed(3):'-';
+    const pStr=r.pValue!=null?(r.pValue<0.001?'<0.001':r.pValue.toFixed(3)):'-';
+    html+='<tr><td style="font-weight:700;">'+escapeHtml(r.effectType)+'</td><td style="font-weight:600;color:var(--accent);">'+valStr+'</td>';
+    html+='<td>'+ciStr+'</td><td>'+pStr+'</td>';
+    html+='<td><span class="badge '+badge+'">'+escapeHtml(r.tier)+'</span></td>';
+    html+='<td style="max-width:200px;font-size:0.72rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;">'+escapeHtml(r.sourceText?.substring(0,80)??'')+'</td></tr>';
+  }
+  html+='</tbody></table>';area.innerHTML=html;
+}
+
+function renderHighlight(text,results){
+  const card=document.getElementById('highlightCard');const area=document.getElementById('highlightArea');
+  card.style.display='';
+  let html=escapeHtml(normalize(text));
+  /* Highlight matched spans (process in reverse order to preserve positions) */
+  const sorted=[...results].sort((a,b)=>b.charStart-a.charStart);
+  for(const r of sorted){
+    const src=escapeHtml(r.sourceText);
+    const idx=html.indexOf(src);
+    if(idx>=0){
+      const color=r.effectType==='EVENTS'?'#fef3c7':'#dbeafe';
+      html=html.substring(0,idx)+'<mark class="val" style="background:'+color+';" title="'+escapeHtml(r.effectType+': '+(r.value?.toFixed(2)??'events'))+'">'+src+'</mark>'+html.substring(idx+src.length);
+    }
+  }
+  area.innerHTML=html;
+}
+
+/* ── CT.gov Fetch ── */
+async function fetchNCT(){
+  const nctId=document.getElementById('nctInput').value.trim();
+  if(!/^NCT\d{8}$/.test(nctId)){alert('Enter a valid NCT ID (e.g., NCT02551094)');return;}
+  try{
+    const resp=await fetch('https://clinicaltrials.gov/api/v2/studies/'+encodeURIComponent(nctId)+'?format=json');
+    if(!resp.ok)throw new Error('Not found');
+    const data=await resp.json();
+    const ps=data.protocolSection??{};
+    const desc=ps.descriptionModule??{};
+    let text=ps.identificationModule?.briefTitle??'';
+    text+='\n\n'+( desc.briefSummary??'');
+    text+='\n\n'+(desc.detailedDescription??'');
+    /* If results exist, add outcome analyses as text */
+    const rs=data.resultsSection;
+    if(rs?.outcomeMeasuresModule?.outcomeMeasures){
+      text+='\n\nResults:\n';
+      for(const m of rs.outcomeMeasuresModule.outcomeMeasures){
+        text+=m.title+': ';
+        for(const a of (m.analyses??[])){
+          text+=(a.paramType??'')+' '+(a.paramValue??'')+' ('+((a.ciLowerLimit??'')+'-'+(a.ciUpperLimit??''))+') p='+(a.pValue??'')+'. ';
+        }
+        text+='\n';
+      }
+    }
+    document.getElementById('inputText').value=text;
+    extract();
+  }catch(e){alert('Failed to fetch '+nctId+': '+e.message);}
+}
+
+/* ── Export ── */
+function copyJSON(){
+  navigator.clipboard.writeText(JSON.stringify(lastResults,null,2)).then(()=>alert('JSON copied')).catch(()=>alert('Copy failed'));
+}
+function copyCSV(){
+  let csv='Type,Value,CI_Lower,CI_Upper,P_Value,Confidence,Source\n';
+  for(const r of lastResults){
+    csv+=[r.effectType,r.effectType==='EVENTS'?r.tE+'/'+r.tN:r.value,r.ciLo??'',r.ciHi??'',r.pValue??'',r.tier,'"'+((r.sourceText??'').replace(/"/g,'""'))+'"'].join(',')+'\n';
+  }
+  navigator.clipboard.writeText(csv).then(()=>alert('CSV copied')).catch(()=>alert('Copy failed'));
+}
+function copyForMA(){
+  let text='# Effect estimates for meta-analysis\n# Extracted by MetaExtract v1.0\n\n';
+  for(const r of lastResults){
+    if(r.effectType==='EVENTS')text+='Events: '+r.tE+'/'+r.tN+' vs '+r.cE+'/'+r.cN+'\n';
+    else text+=r.effectType+' = '+r.value?.toFixed(3)+(r.ciLo!=null?' ('+r.ciLo.toFixed(3)+' to '+r.ciHi.toFixed(3)+')':'')+(r.pValue!=null?', p='+r.pValue.toFixed(4):'')+'\n';
+  }
+  navigator.clipboard.writeText(text).then(()=>alert('Copied')).catch(()=>alert('Copy failed'));
+}
+</script>
+</body>
+</html>

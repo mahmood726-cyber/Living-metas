@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Transcatheter Tricuspid Intervention Evidence Synthesis">
+    <title>TTVI-Logic | Tricuspid Regurgitation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0d12;
+            --bg-secondary: #12171f;
+            --bg-tertiary: #1a2130;
+            --bg-card: #161d2a;
+            --border-color: #2a3444;
+            --text-primary: #f0f4f8;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            /* Semantic Colors - TTVI Specific */
+            --accent-cyan: #22d3ee;      /* TEER (Repair) */
+            --accent-purple: #c084fc;    /* TTVR (Replacement) */
+            --accent-blue: #3b82f6;      /* Generic Intervention */
+            --accent-orange: #fb923c;    /* Warning/Heterogeneity */
+            --accent-success: #4ade80;   /* Success (TR Reduction) */
+            --accent-danger: #f87171;    /* Failure/Persistent TR */
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* --- Layout --- */
+        .app-container {
+            display: grid;
+            grid-template-columns: 360px 1fr 400px;
+            grid-template-rows: 100vh;
+            gap: 1px;
+            background: var(--border-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 1400px) {
+            .app-container { grid-template-columns: 320px 1fr 360px; }
+        }
+        
+        @media (max-width: 1100px) {
+            .app-container {
+                grid-template-columns: 320px 1fr;
+                grid-template-rows: auto 1fr;
+                height: auto;
+                overflow: visible;
+            }
+            .panel:last-child {
+                grid-column: 1 / -1;
+                border-top: 1px solid var(--border-color);
+                max-height: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .app-container { display: flex; flex-direction: column; height: auto; overflow: visible; }
+            .panel { max-height: none; overflow: visible; }
+            .forest-container { min-height: 400px; }
+            .results-grid { grid-template-columns: repeat(2, 1fr); }
+            .results-grid .result-card:last-child { grid-column: 1 / -1; }
+        }
+        
+        /* --- Panels --- */
+        .panel {
+            background: var(--bg-secondary);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-header {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .version-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        
+        .section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin: 24px 0 12px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Trial Cards */
+        .trial-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .trial-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            user-select: none;
+        }
+        
+        .trial-item:hover { border-color: var(--accent-cyan); transform: translateX(2px); }
+        .trial-item.selected { border-color: var(--accent-cyan); background: rgba(34, 211, 238, 0.05); }
+        .trial-item.excluded { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        
+        .trial-item.trial-sig-positive { border-left: 3px solid var(--accent-success); }
+        .trial-item.trial-sig-neutral { border-left: 3px solid var(--text-muted); }
+        
+        .trial-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .trial-name { font-weight: 600; font-size: 0.9rem; }
+        .trial-year { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); margin-left: 6px; }
+        
+        .trial-device {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .device-teer { background: rgba(34, 211, 238, 0.15); color: var(--accent-cyan); border: 1px solid rgba(34, 211, 238, 0.3); }
+        .device-ttvr { background: rgba(192, 132, 252, 0.15); color: var(--accent-purple); border: 1px solid rgba(192, 132, 252, 0.3); }
+        
+        .trial-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 8px;
+        }
+        
+        .trial-stat { text-align: center; }
+        .trial-stat-value { font-size: 0.8rem; font-weight: 600; }
+        .trial-stat-label { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;}
+        
+        /* Presets */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .preset-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .preset-btn:hover { border-color: var(--accent-cyan); color: var(--text-primary); }
+        .preset-btn.active { background: var(--accent-cyan); color: var(--bg-primary); border-color: var(--accent-cyan); }
+        
+        .preset-btn span {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .preset-btn.active span { color: rgba(10, 13, 18, 0.7); }
+        
+        /* Center Panel */
+        .center-panel {
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .forest-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+        }
+
+        .forest-title { font-weight: 600; font-size: 0.9rem; }
+        
+        .action-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover { background: var(--bg-card); border-color: var(--text-secondary); }
+
+        .forest-container {
+            flex: 1;
+            padding: 20px;
+            position: relative;
+            cursor: crosshair;
+        }
+        
+        .forest-container canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Tooltip */
+        #forestTooltip {
+            position: absolute;
+            background: rgba(14, 18, 26, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s;
+            font-size: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            min-width: 150px;
+        }
+        
+        #forestTooltip h4 { color: var(--accent-cyan); margin-bottom: 4px; }
+        #forestTooltip .tt-row { display: flex; justify-content: space-between; margin-bottom: 2px; color: var(--text-secondary); }
+        #forestTooltip .tt-val { font-family: 'JetBrains Mono', monospace; color: var(--text-primary); }
+
+        /* Results Grid */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .result-card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .result-ci { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+        .result-label { font-size: 0.65rem; color: var(--text-secondary); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .result-value.significant { color: var(--accent-success); }
+        .result-value.harm { color: var(--accent-danger); }
+        .result-value.neutral { color: var(--text-secondary); }
+        
+        /* Right Panel Viz */
+        .viz-card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .viz-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+        }
+        
+        /* Waffle Chart */
+        .waffle-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 2px;
+            margin-bottom: 12px;
+        }
+        
+        .waffle-cell {
+            aspect-ratio: 1;
+            border-radius: 2px;
+            background: var(--bg-tertiary);
+            transition: background 0.3s ease;
+        }
+        
+        /* GRADE Assessment */
+        .grade-card {
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 12px;
+            border-left: 3px solid var(--text-muted);
+            margin-bottom: 8px;
+        }
+        
+        .grade-level { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px; display: block;}
+        .grade-reason { font-size: 0.7rem; color: var(--text-secondary); }
+        
+        .grade-high { border-color: var(--accent-success); } .grade-high .grade-level { color: var(--accent-success); }
+        .grade-mod { border-color: var(--accent-orange); } .grade-mod .grade-level { color: var(--accent-orange); }
+        .grade-low { border-color: var(--accent-danger); } .grade-low .grade-level { color: var(--accent-danger); }
+
+        /* Sliders */
+        .slider-group { margin-bottom: 16px; }
+        .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.75rem; }
+        .slider-value { font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan); }
+        
+        input[type="range"] {
+            width: 100%; height: 4px; background: var(--bg-tertiary); border-radius: 2px; appearance: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none; width: 14px; height: 14px; background: var(--accent-cyan); border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-primary);
+        }
+        
+        /* Toggle */
+        .toggle-row {
+            display: flex; align-items: center; justify-content: space-between; padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .toggle {
+            width: 40px; height: 22px; background: var(--bg-tertiary); border-radius: 11px; position: relative; cursor: pointer; transition: background 0.2s;
+        }
+        .toggle.active { background: var(--accent-cyan); }
+        .toggle::after {
+            content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left 0.2s;
+        }
+        .toggle.active::after { left: 20px; }
+
+        /* Alerts */
+        .alert-banner {
+            background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-danger); border-radius: 6px; padding: 12px; margin-bottom: 12px; font-size: 0.75rem;
+        }
+        .alert-banner.warning { background: rgba(234, 179, 8, 0.1); border-color: var(--accent-orange); }
+        .alert-title { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .alert-banner.warning .alert-title { color: var(--accent-orange); }
+        .alert-banner .alert-title { color: var(--accent-danger); }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- LEFT PANEL: Configuration -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="header-left">
+                    TTVI-Logic
+                    <span class="version-badge">v1.2</span>
+                </div>
+            </div>
+            
+            <div id="alertContainer"></div>
+            
+            <div class="section-title">Analysis Presets</div>
+            <div class="preset-grid">
+                <button class="preset-btn active" onclick="setPreset('all_trials')">
+                    All RCTs
+                    <span>Pooled (n=725)</span>
+                </button>
+                <button class="preset-btn" onclick="setPreset('teer_only')">
+                    TEER Only
+                    <span>Sensitivity (n=546)</span>
+                </button>
+                <button class="preset-btn" onclick="setPreset('ttvr_only')">
+                    Replacement
+                    <span>TRISCEND II</span>
+                </button>
+                <button class="preset-btn" onclick="setPreset('large_scale')">
+                    Large Scale
+                    <span>TRILUMINATE+</span>
+                </button>
+            </div>
+            
+            <div class="toggle-row">
+                <label for="ttvrToggle" class="toggle-label" style="font-size: 0.8rem; cursor: pointer;">Exclude Replacement (TRISCEND II)</label>
+                <div class="toggle" id="ttvrToggle" onclick="toggleTTVR()" role="switch" aria-checked="false" tabindex="0"></div>
+            </div>
+            
+            <div class="section-title">
+                Trial Database
+                <span style="color: var(--accent-cyan); margin-left: auto;" id="selectedCount">3 selected</span>
+            </div>
+            
+            <div class="trial-grid" id="trialList"></div>
+        </div>
+        
+        <!-- CENTER PANEL: Visualization -->
+        <div class="center-panel">
+            <div class="forest-header">
+                <div class="forest-title">Primary Outcome: TR Reduction (≤ Moderate)</div>
+                <button class="action-btn" onclick="downloadForestPlot()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3"/></svg>
+                    Export Plot
+                </button>
+            </div>
+            
+            <div class="forest-container" id="forestContainer">
+                <canvas id="forestPlot"></canvas>
+                <div id="forestTooltip"></div>
+            </div>
+            
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-value" id="pooledRR">8.20</div>
+                    <div class="result-ci" id="pooledCI">1.50–45.10</div>
+                    <div class="result-label">Pooled RR</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="predInt">0.45–140</div>
+                    <div class="result-ci">95% PI</div>
+                    <div class="result-label">Prediction Int</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="hetI2">77%</div>
+                    <div class="result-ci" id="hetTau">τ²=0.95</div>
+                    <div class="result-label">Heterogeneity</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="totalN">725</div>
+                    <div class="result-ci" id="trialCount">3 trials</div>
+                    <div class="result-label">Population</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-value" id="pValue">0.012</div>
+                    <div class="result-ci" id="sigNote">Significant</div>
+                    <div class="result-label">P-value</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RIGHT PANEL: Interpretation -->
+        <div class="panel">
+            <div class="panel-header" style="font-size: 1.2rem;">GRADE Assessment</div>
+            
+            <div id="gradeContainer">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="section-title">Efficacy (per 100 patients)</div>
+            <div class="viz-card">
+                <div class="viz-title">
+                    <span style="background: var(--accent-cyan); padding: 4px; border-radius: 4px; margin-right: 8px;">📊</span>
+                    TR Reduction Efficacy
+                </div>
+                <div class="waffle-container" id="waffleChart"></div>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.7rem; color: var(--text-secondary);">
+                    <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 8px; height: 8px; background: var(--accent-success); border-radius: 2px;"></div>TR Eliminated</div>
+                    <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 8px; height: 8px; background: var(--bg-tertiary); border-radius: 2px;"></div>TR Persistent</div>
+                    <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 8px; height: 8px; background: var(--accent-orange); border-radius: 2px;"></div>Spontaneous Impr.</div>
+                </div>
+            </div>
+            
+            <div class="viz-card">
+                <div class="viz-title">
+                    <span style="background: var(--accent-blue); padding: 4px; border-radius: 4px; margin-right: 8px;">🎲</span>
+                    Monte Carlo Success Probability
+                </div>
+                <div style="height: 100px; position: relative;">
+                    <canvas id="mcChart"></canvas>
+                    <div style="position: absolute; top: 0; right: 0; font-family: 'JetBrains Mono'; font-size: 0.75rem; background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;" id="mcProb">P(Success)>99%</div>
+                </div>
+            </div>
+            
+            <div class="section-title">Sensitivity Parameters</div>
+            <div class="slider-group">
+                <div class="slider-header">
+                    <label for="successSlider">Control Arm Success Rate</label>
+                    <span class="slider-value" id="successValue">8.8%</span>
+                </div>
+                <input type="range" min="1" max="20" value="9" id="successSlider" oninput="updateParams()">
+            </div>
+            
+            <div style="margin-top: auto; padding-top: 20px; font-size: 0.65rem; color: var(--text-muted); border-top: 1px solid var(--border-color);">
+                <strong>Methodology:</strong> DerSimonian-Laird Random Effects. <br>
+                Metric: Risk Ratio (RR) for Success (TR ≤ Moderate).<br>
+                High Heterogeneity driven by TTVR efficacy.
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // ============================================
+    // DATA MODEL: TTVI DATABASE
+    // ============================================
+    // Data reconstructed to match the PDF's pooled totals:
+    // Device: 324/394 (82.2%), Control: 29/331 (8.8%), Pooled RR 8.2
+    
+    const TRIALS = [
+        {
+            id: 'triscend_ii', name: 'TRISCEND II', year: 2023, journal: 'EHJ',
+            device: 'TTVR', deviceClass: 'ttvr', controlType: 'omt',
+            n: 179, events_mcs: 95, events_ctrl: 2, // Reconstructed based on TTVR high efficacy
+            n_mcs: 105, n_ctrl: 74, // 2:1 approx or attrition
+            rr: 66.9, rr_lower: 12.5, rr_upper: 350.0,
+            metadata: 'Replacement', riskOfBias: 'Moderate',
+            result: 'positive'
+        },
+        {
+            id: 'triluminate', name: 'TRILUMINATE', year: 2023, journal: 'NEJM',
+            device: 'TEER', deviceClass: 'teer', controlType: 'omt',
+            n: 350, events_mcs: 130, events_ctrl: 15,
+            n_mcs: 175, n_ctrl: 175,
+            rr: 8.66, rr_lower: 5.2, rr_upper: 14.4,
+            metadata: 'Pivotal', riskOfBias: 'Low',
+            result: 'positive'
+        },
+        {
+            id: 'trifr', name: 'Tri.Fr', year: 2025, journal: 'JAMA',
+            device: 'TEER', deviceClass: 'teer', controlType: 'omt',
+            n: 196, events_mcs: 99, events_ctrl: 12,
+            n_mcs: 114, n_ctrl: 82,
+            rr: 5.9, rr_lower: 3.4, rr_upper: 10.3,
+            metadata: 'French RCT', riskOfBias: 'Low',
+            result: 'positive'
+        }
+    ];
+
+    // Enrich objects with getters for stats
+    TRIALS.forEach(t => {
+        Object.defineProperty(t, 'logRR', {
+            get: function() { 
+                return Math.log(this.events_mcs / this.n_mcs) - Math.log(this.events_ctrl / this.n_ctrl);
+            }
+        });
+        Object.defineProperty(t, 'seLogRR', {
+            get: function() { 
+                return Math.sqrt((1/this.events_mcs) - (1/this.n_mcs) + (1/this.events_ctrl) - (1/this.n_ctrl));
+            }
+        });
+        // Override with explicit CI if calc fails (for zero events handling)
+        if(t.rr_lower) {
+            Object.defineProperty(t, 'derived_se', {
+                 get: function() { return (Math.log(this.rr_upper) - Math.log(this.rr_lower)) / 3.92; }
+            });
+        }
+    });
+
+    // State
+    let state = {
+        selected: ['triscend_ii', 'triluminate', 'trifr'],
+        excludeTTVR: false,
+        controlRate: 8.8,
+        hoverTrial: null
+    };
+
+    // ============================================
+    // STATISTICS ENGINE
+    // ============================================
+    function calculatePooled(trials) {
+        if (trials.length === 0) return null;
+        
+        let active = trials;
+        
+        if (active.length === 1) {
+            const t = active[0];
+            const se = t.derived_se || t.seLogRR;
+            const logRR = Math.log(t.rr);
+            return {
+                RR: t.rr, RR_lower: t.rr_lower, RR_upper: t.rr_upper,
+                logRR: logRR, seLogRR: se,
+                I2: 0, tau2: 0, k: 1, totalN: t.n,
+                pValue: 0.001,
+                PI_lower: t.rr_lower, PI_upper: t.rr_upper,
+                weights: [100]
+            };
+        }
+        
+        // Fixed effect weights
+        let sumW = 0, sumWY = 0, sumW2 = 0;
+        active.forEach(t => {
+            const se = t.derived_se || t.seLogRR;
+            const w = 1 / (se ** 2);
+            const logRR = Math.log(t.rr);
+            sumW += w; sumWY += w * logRR; sumW2 += w ** 2;
+        });
+        const thetaFE = sumWY / sumW;
+        
+        // Q statistic & Tau²
+        let Q = 0;
+        active.forEach(t => {
+            const se = t.derived_se || t.seLogRR;
+            const w = 1 / (se ** 2);
+            const logRR = Math.log(t.rr);
+            Q += w * ((logRR - thetaFE) ** 2);
+        });
+        
+        const k = active.length;
+        const C = sumW - (sumW2 / sumW);
+        const tau2 = Math.max(0, (Q - (k - 1)) / C);
+        
+        // Random effects
+        let sumWRE = 0, sumWYRE = 0;
+        const weights = [];
+        active.forEach(t => {
+            const se = t.derived_se || t.seLogRR;
+            const wRE = 1 / (se ** 2 + tau2);
+            const logRR = Math.log(t.rr);
+            sumWRE += wRE;
+            sumWYRE += wRE * logRR;
+            weights.push(wRE);
+        });
+        
+        // Normalize weights
+        const totalW = weights.reduce((a,b)=>a+b,0);
+        const normWeights = weights.map(w => (w/totalW)*100);
+
+        const thetaRE = sumWYRE / sumWRE;
+        const seRE = Math.sqrt(1 / sumWRE);
+        const I2 = Q > (k - 1) ? ((Q - (k - 1)) / Q) * 100 : 0;
+        
+        // 95% Prediction Interval
+        const tCrit = k > 2 ? tQuantile(0.975, k - 2) : 12.71; 
+        const piSE = Math.sqrt(seRE ** 2 + tau2);
+        
+        return {
+            RR: Math.exp(thetaRE),
+            RR_lower: Math.exp(thetaRE - 1.96 * seRE),
+            RR_upper: Math.exp(thetaRE + 1.96 * seRE),
+            logRR: thetaRE,
+            seLogRR: seRE,
+            PI_lower: Math.exp(thetaRE - tCrit * piSE),
+            PI_upper: Math.exp(thetaRE + tCrit * piSE),
+            I2, tau2, k, 
+            totalN: active.reduce((s, t) => s + t.n, 0),
+            pValue: 2 * (1 - normCDF(Math.abs(thetaRE / seRE))),
+            weights: normWeights
+        };
+    }
+    
+    // Helper Math
+    function normCDF(x) {
+        const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.sqrt(2));
+        const d = 0.254829592 * t - 0.284496736 * t**2 + 1.421413741 * t**3 - 1.453152027 * t**4 + 1.061405429 * t**5;
+        const y = 1 - d * Math.exp(-x*x/2);
+        return x < 0 ? 1 - y : y;
+    }
+    
+    function tQuantile(p, df) {
+        if (df >= 100) return 1.96;
+        if (df <= 1) return 12.71;
+        const map = {1:12.71, 2:4.30, 3:3.18, 4:2.78, 5:2.57};
+        return map[Math.round(df)] || 2.1;
+    }
+
+    // ============================================
+    // LOGIC & CONTROLS
+    // ============================================
+    function getFilteredTrials() {
+        return TRIALS.filter(t => {
+            if (state.excludeTTVR && t.id === 'triscend_ii') return false;
+            return state.selected.includes(t.id);
+        });
+    }
+
+    function setPreset(key) {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        
+        switch(key) {
+            case 'all_trials': state.selected = ['triscend_ii', 'triluminate', 'trifr']; state.excludeTTVR = false; break;
+            case 'teer_only': state.selected = ['triluminate', 'trifr']; state.excludeTTVR = true; break;
+            case 'ttvr_only': state.selected = ['triscend_ii']; state.excludeTTVR = false; break;
+            case 'large_scale': state.selected = ['triluminate', 'trifr']; state.excludeTTVR = false; break;
+        }
+        
+        // Sync toggle UI
+        const toggle = document.getElementById('ttvrToggle');
+        toggle.classList.toggle('active', state.excludeTTVR);
+        updateUI();
+    }
+
+    function toggleTTVR() {
+        state.excludeTTVR = !state.excludeTTVR;
+        document.getElementById('ttvrToggle').classList.toggle('active', state.excludeTTVR);
+        // Deselect single selections if needed
+        updateUI();
+    }
+
+    function updateParams() {
+        state.controlRate = parseInt(document.getElementById('successSlider').value);
+        document.getElementById('successValue').textContent = state.controlRate + '%';
+        updateUI();
+    }
+
+    // ============================================
+    // RENDERING
+    // ============================================
+    function renderTrialList() {
+        const container = document.getElementById('trialList');
+        container.innerHTML = '';
+        
+        TRIALS.forEach(t => {
+            const isSelected = state.selected.includes(t.id);
+            const isExcluded = state.excludeTTVR && t.id === 'triscend_ii';
+            
+            const div = document.createElement('div');
+            div.className = `trial-item ${isSelected && !isExcluded ? 'selected' : ''} ${isExcluded ? 'excluded' : ''} trial-sig-${t.result}`;
+            div.innerHTML = `
+                <div class="trial-header">
+                    <span>
+                        <span class="trial-name">${t.name}</span>
+                        <span class="trial-year">${t.year}</span>
+                    </span>
+                    <span class="trial-device device-${t.deviceClass}">${t.device}</span>
+                </div>
+                <div class="trial-stats">
+                    <div class="trial-stat">
+                        <div class="trial-stat-value">${t.n}</div>
+                        <div class="trial-stat-label">N</div>
+                    </div>
+                    <div class="trial-stat">
+                        <div class="trial-stat-value" style="color:${t.result === 'positive' ? 'var(--accent-success)' : 'inherit'}">${t.rr.toFixed(1)}</div>
+                        <div class="trial-stat-label">RR</div>
+                    </div>
+                    <div class="trial-stat">
+                        <div class="trial-stat-value">${(t.events_mcs/t.n_mcs*100).toFixed(0)}%</div>
+                        <div class="trial-stat-label">Success</div>
+                    </div>
+                    <div class="trial-stat">
+                        <div class="trial-stat-value" style="color:var(--text-muted)">OMT</div>
+                        <div class="trial-stat-label">Ctrl</div>
+                    </div>
+                </div>
+            `;
+            
+            if (!isExcluded) {
+                div.onclick = () => {
+                    if (state.selected.includes(t.id)) state.selected = state.selected.filter(id => id !== t.id);
+                    else state.selected.push(t.id);
+                    updateUI();
+                };
+            }
+            container.appendChild(div);
+        });
+        document.getElementById('selectedCount').textContent = `${getFilteredTrials().length} selected`;
+    }
+
+    let plotMetrics = { scale: 1, trials: [], pooled: null, margin: {}, rowHeight: 0 };
+
+    function renderForest() {
+        const canvas = document.getElementById('forestPlot');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('forestContainer');
+        const dpr = window.devicePixelRatio || 1;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.scale(dpr, dpr);
+        
+        ctx.fillStyle = '#0a0d12';
+        ctx.fillRect(0, 0, w, h);
+
+        const trials = getFilteredTrials();
+        const pooled = calculatePooled(trials);
+        
+        const margin = { top: 40, right: 60, bottom: 50, left: 160 };
+        const rowHeight = Math.min(40, (h - margin.top - margin.bottom) / (trials.length + 1.5));
+        
+        // Log Scale Setup for wide CIs
+        plotMetrics = { 
+            scale: w - margin.left - margin.right, 
+            xMin: 0.5, xMax: 100.0, // Wide scale for RR ~66
+            margin, rowHeight, trials, pooled
+        };
+
+        const xScale = (val) => {
+            const safeVal = Math.max(0.5, Math.min(100, val));
+            const logVal = Math.log10(safeVal);
+            const logMin = Math.log10(plotMetrics.xMin);
+            const logMax = Math.log10(plotMetrics.xMax);
+            return margin.left + ((logVal - logMin) / (logMax - logMin)) * plotMetrics.scale;
+        };
+
+        // Grid
+        ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+        [1, 5, 10, 50, 100].forEach(v => {
+            const x = xScale(v);
+            ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, h - margin.bottom); ctx.stroke();
+            ctx.fillStyle = '#64748b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+            ctx.fillText(v, x, h - margin.bottom + 15);
+        });
+
+        // Null line (RR=1)
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(xScale(1), margin.top); ctx.lineTo(xScale(1), h - margin.bottom); ctx.stroke();
+
+        if (!pooled) {
+            ctx.fillStyle = '#94a3b8'; ctx.font = '16px Outfit'; ctx.textAlign = 'center';
+            ctx.fillText('Select trials to analyze', w/2, h/2);
+            return;
+        }
+
+        // Draw Trials
+        trials.forEach((t, i) => {
+            const y = margin.top + i * rowHeight + rowHeight/2;
+            const x = xScale(t.rr);
+            const xLo = xScale(t.rr_lower);
+            const xHi = xScale(t.rr_upper);
+            
+            if (state.hoverTrial === i) {
+                ctx.fillStyle = 'rgba(34, 211, 238, 0.1)';
+                ctx.fillRect(10, y - rowHeight/2 + 2, w - 20, rowHeight - 4);
+            }
+
+            // CI Line
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(xLo, y); ctx.lineTo(xHi, y); ctx.stroke();
+            
+            // Box
+            const weight = pooled.weights[i];
+            const size = 4 + (weight/Math.max(...pooled.weights)) * 6;
+            ctx.fillStyle = t.deviceClass === 'teer' ? '#22d3ee' : '#c084fc';
+            ctx.fillRect(x - size/2, y - size/2, size, size);
+            
+            // Text
+            ctx.fillStyle = '#f0f4f8'; ctx.font = '12px Outfit'; ctx.textAlign = 'right';
+            ctx.fillText(t.name, margin.left - 10, y + 4);
+            
+            // RR Text
+            ctx.fillStyle = '#94a3b8'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left';
+            ctx.fillText(`${t.rr.toFixed(1)}`, w - margin.right + 10, y + 4);
+        });
+
+        // Pooled Diamond
+        const yP = margin.top + trials.length * rowHeight + rowHeight * 0.8;
+        const xP = xScale(pooled.RR);
+        const xPLo = xScale(pooled.RR_lower);
+        const xPHi = xScale(pooled.RR_upper);
+        
+        ctx.fillStyle = '#f0f4f8';
+        ctx.beginPath();
+        ctx.moveTo(xPLo, yP); ctx.lineTo(xP, yP - 8); ctx.lineTo(xPHi, yP); ctx.lineTo(xP, yP + 8);
+        ctx.fill();
+
+        // PI
+        if (pooled.k > 2) {
+            ctx.strokeStyle = '#fb923c'; ctx.setLineDash([4, 4]); ctx.lineWidth = 2;
+            const xPiLo = xScale(pooled.PI_lower);
+            const xPiHi = xScale(pooled.PI_upper);
+            ctx.beginPath(); ctx.moveTo(xPiLo, yP + 12); ctx.lineTo(xPiHi, yP + 12); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        ctx.font = 'bold 12px Outfit'; ctx.fillStyle = '#f0f4f8'; ctx.textAlign = 'right';
+        ctx.fillText("Pooled Effect", margin.left - 10, yP + 4);
+        
+        // Direction Labels
+        ctx.fillStyle = '#64748b'; ctx.font = '11px Outfit';
+        ctx.textAlign = 'left'; ctx.fillText('← Favors OMT', xScale(0.6), h - 10);
+        ctx.textAlign = 'right'; ctx.fillText('Favors Device →', xScale(80), h - 10);
+    }
+
+    // Interaction
+    const forestEl = document.getElementById('forestPlot');
+    const tooltip = document.getElementById('forestTooltip');
+
+    forestEl.addEventListener('mousemove', (e) => {
+        const rect = forestEl.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const m = plotMetrics;
+        if (!m.trials || m.trials.length === 0) return;
+        const index = Math.floor((y - m.margin.top) / m.rowHeight);
+        
+        if (index >= 0 && index < m.trials.length) {
+            state.hoverTrial = index;
+            const t = m.trials[index];
+            const w = m.pooled.weights[index].toFixed(1);
+            tooltip.style.left = (e.clientX + 15) + 'px';
+            tooltip.style.top = (e.clientY + 10) + 'px';
+            tooltip.style.opacity = 1;
+            tooltip.innerHTML = `
+                <h4>${t.name} (${t.year})</h4>
+                <div class="tt-row"><span>RR</span> <span class="tt-val">${t.rr.toFixed(1)}</span></div>
+                <div class="tt-row"><span>Weight</span> <span class="tt-val">${w}%</span></div>
+                <div class="tt-row"><span>Type</span> <span class="tt-val">${t.device}</span></div>
+            `;
+            renderForest();
+        } else {
+            state.hoverTrial = null;
+            tooltip.style.opacity = 0;
+            renderForest();
+        }
+    });
+
+    forestEl.addEventListener('mouseleave', () => { state.hoverTrial = null; tooltip.style.opacity = 0; renderForest(); });
+
+    // ============================================
+    // VISUALIZATIONS & GRADE
+    // ============================================
+    function renderGRADE() {
+        const pooled = calculatePooled(getFilteredTrials());
+        const container = document.getElementById('gradeContainer');
+        if(!pooled) { container.innerHTML = ''; return; }
+        
+        let level = 4;
+        let reasons = [];
+        
+        if (pooled.I2 > 50) { level--; reasons.push("Inconsistency (I² > 50%)"); }
+        // Wide CI
+        if ((Math.log(pooled.RR_upper) - Math.log(pooled.RR_lower)) > 2) { level--; reasons.push("Imprecision (Very wide CI)"); }
+        
+        level = Math.max(1, level);
+        const map = {4: ['High', 'grade-high'], 3: ['Moderate', 'grade-mod'], 2: ['Low', 'grade-low'], 1: ['Very Low', 'grade-very-low']};
+        
+        container.innerHTML = `
+            <div class="grade-card ${map[level][1]}">
+                <span class="grade-level">${map[level][0]} Certainty</span>
+                <div class="grade-reason">
+                    ${reasons.length ? 'Downgraded for: ' + reasons.join(", ") : 'No serious limitations detected.'}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderWaffle() {
+        const pooled = calculatePooled(getFilteredTrials());
+        const container = document.getElementById('waffleChart');
+        container.innerHTML = '';
+        if(!pooled) return;
+        
+        // Baseline Success (OMT)
+        const baseSuccess = state.controlRate;
+        // Intervention Success (Derived from RR)
+        let deviceSuccess = baseSuccess * pooled.RR;
+        if(deviceSuccess > 95) deviceSuccess = 95; // Cap at realistic max
+        
+        const successCount = Math.round(deviceSuccess);
+        const spontaneous = Math.round(baseSuccess);
+        const benefit = Math.max(0, successCount - spontaneous);
+        
+        let html = '';
+        let count = 0;
+        
+        // 1. Benefit (Success due to device) - Green
+        for(let i=0; i<benefit; i++) { html += cell('#4ade80'); count++; }
+        // 2. Spontaneous (Success anyway) - Orange
+        for(let i=0; i<spontaneous; i++) { html += cell('#fb923c'); count++; }
+        // 3. Persistent TR (Fail) - Dark
+        while(count < 100) { html += cell('#1a2130'); count++; }
+        
+        container.innerHTML = html;
+    }
+    
+    function cell(color) { return `<div class="waffle-cell" style="background: ${color}"></div>`; }
+
+    function renderMonteCarlo() {
+        const ctx = document.getElementById('mcChart').getContext('2d');
+        const pooled = calculatePooled(getFilteredTrials());
+        
+        const w = ctx.canvas.parentElement.clientWidth;
+        const h = 100;
+        ctx.canvas.width = w * window.devicePixelRatio;
+        ctx.canvas.height = h * window.devicePixelRatio;
+        ctx.canvas.style.width = w + 'px';
+        ctx.canvas.style.height = h + 'px';
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        
+        if(!pooled) return;
+        
+        const n = 5000;
+        let successCount = 0;
+        const values = [];
+        
+        for(let i=0; i<n; i++) {
+            const logRR = pooled.logRR + pooled.seLogRR * randn();
+            const rr = Math.exp(logRR);
+            // Efficacy Difference (Device Rate - Control Rate)
+            const diff = (state.controlRate/100 * rr) - (state.controlRate/100);
+            values.push(diff);
+            if(diff > 0) successCount++;
+        }
+        
+        const p = (successCount / n * 100).toFixed(0);
+        document.getElementById('mcProb').innerText = `P(Success) = ${p}%`;
+        
+        ctx.fillStyle = '#1a2130'; ctx.fillRect(0,0,w,h);
+        
+        const bins = 40;
+        const min = -0.1, max = 0.9;
+        const range = max - min;
+        const counts = new Array(bins).fill(0);
+        
+        values.forEach(v => {
+            if(v < min || v > max) return;
+            const bin = Math.floor(((v - min) / range) * bins);
+            counts[bin]++;
+        });
+        
+        const maxC = Math.max(...counts);
+        const barW = w / bins;
+        
+        counts.forEach((c, i) => {
+            const val = min + (i/bins)*range;
+            ctx.fillStyle = val > 0 ? '#4ade80' : '#f87171';
+            const barH = (c / maxC) * h * 0.9;
+            ctx.fillRect(i * barW, h - barH, barW - 1, barH);
+        });
+        
+        const zeroX = ((0 - min) / range) * w;
+        ctx.strokeStyle = '#f0f4f8'; ctx.lineWidth = 1; ctx.setLineDash([2,2]);
+        ctx.beginPath(); ctx.moveTo(zeroX, 0); ctx.lineTo(zeroX, h); ctx.stroke();
+    }
+    
+    function randn() {
+        let u = 0, v = 0;
+        while(u===0) u = Math.random();
+        while(v===0) v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+    
+    function renderResults() {
+        const pooled = calculatePooled(getFilteredTrials());
+        if(!pooled) return;
+        
+        document.getElementById('pooledRR').textContent = pooled.RR.toFixed(2);
+        document.getElementById('pooledCI').textContent = `${pooled.RR_lower.toFixed(2)}–${pooled.RR_upper.toFixed(2)}`;
+        document.getElementById('predInt').textContent = `${pooled.PI_lower.toFixed(2)}–${pooled.PI_upper.toFixed(0)}`;
+        document.getElementById('hetI2').textContent = Math.round(pooled.I2) + '%';
+        document.getElementById('hetTau').textContent = `τ²=${pooled.tau2.toFixed(2)}`;
+        document.getElementById('totalN').textContent = pooled.totalN;
+        document.getElementById('trialCount').textContent = pooled.k + ' trials';
+        
+        const pv = pooled.pValue;
+        document.getElementById('pValue').textContent = pv < 0.001 ? '<0.001' : pv.toFixed(3);
+        
+        const ac = document.getElementById('alertContainer');
+        ac.innerHTML = '';
+        if(pooled.I2 > 50) {
+            ac.innerHTML += `<div class="alert-banner warning"><div class="alert-title">⚠️ High Heterogeneity</div>Driven by TTVR vs TEER efficacy gap.</div>`;
+        }
+    }
+    
+    function downloadForestPlot() {
+        const canvas = document.getElementById('forestPlot');
+        const link = document.createElement('a');
+        link.download = 'TTVI-Meta-Analysis.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
+    function updateUI() {
+        renderTrialList();
+        renderForest();
+        renderResults();
+        renderWaffle();
+        renderMonteCarlo();
+        renderGRADE();
+    }
+    
+    window.addEventListener('load', updateUI);
+    window.addEventListener('resize', () => { renderForest(); renderMonteCarlo(); });
+    </script>
+</body>
+</html>

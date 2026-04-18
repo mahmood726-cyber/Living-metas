@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGLT2 HF Review — Improvement Plan</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0f1a; color: #e2e8f0; font-family: 'Inter', -apple-system, sans-serif; padding: 2rem; }
+  h1 { font-size: 1.6rem; font-weight: 800; color: #60a5fa; margin-bottom: 0.3rem; }
+  .subtitle { color: #94a3b8; font-size: 0.85rem; margin-bottom: 2rem; }
+
+  .gap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 2rem; }
+
+  .gap-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 2px solid #334155;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .gap-card:hover { border-color: #60a5fa; transform: translateY(-2px); }
+  .gap-card.selected { border-color: #3b82f6; background: rgba(59, 130, 246, 0.12); box-shadow: 0 0 20px rgba(59,130,246,0.15); }
+  .gap-card.selected::after {
+    content: '✓'; position: absolute; top: 0.75rem; right: 0.75rem;
+    background: #3b82f6; color: white; width: 24px; height: 24px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: bold;
+  }
+
+  .gap-num { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #fbbf24; margin-bottom: 0.5rem; }
+  .gap-title { font-size: 1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.4rem; }
+  .gap-desc { font-size: 0.78rem; color: #94a3b8; line-height: 1.5; margin-bottom: 0.75rem; }
+
+  .gap-compare {
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+  }
+  .chip { font-size: 0.62rem; padding: 2px 8px; border-radius: 999px; font-weight: 700; border: 1px solid; }
+  .chip-has { background: rgba(34,197,94,0.12); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+  .chip-missing { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.3); }
+  .chip-partial { background: rgba(251,191,36,0.12); color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+
+  .priority-badge {
+    display: inline-block; font-size: 0.6rem; font-weight: 800; padding: 2px 6px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;
+  }
+  .p-high { background: #7f1d1d; color: #fca5a5; }
+  .p-med { background: #78350f; color: #fcd34d; }
+
+  .footer { text-align: center; color: #475569; font-size: 0.72rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #1e293b; }
+
+  .instructions { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.8rem; color: #93c5fd; }
+</style>
+</head>
+<body>
+
+<h1>SGLT2 HF Review — Feature Gaps vs Sibling Metas</h1>
+<p class="subtitle">Click to select which improvements to prioritize. Select all that matter to you.</p>
+
+<div class="instructions">
+  <strong>How this works:</strong> Click any card(s) below to select the features you want added. Then tell me in the terminal which ones to build first — or just say "all of them."
+</div>
+
+<div class="gap-grid">
+
+  <!-- Gap 1 -->
+  <div class="gap-card" onclick="this.classList.toggle('selected')">
+    <span class="priority-badge p-high">HIGH IMPACT</span>
+    <div class="gap-num">Gap 1</div>
+    <div class="gap-title">Method Sensitivity Chart</div>
+    <div class="gap-desc">Side-by-side comparison of DL vs HKSJ vs Bayesian pooled estimates. Shows whether the conclusion is robust across statistical methods. GLP1 and Colchicine both have this as chart #17.</div>
+    <div class="gap-compare">
+      <span class="chip chip-has">GLP1 ✓</span>
+      <span class="chip chip-has">Colchicine ✓</span>
+      <span class="chip chip-has">Finerenone ✓</span>
+      <span class="chip chip-missing">SGLT2 ✗</span>
+    </div>
+  </div>
+
+  <!-- Gap 2 -->
+  <div class="gap-card" onclick="this.classList.toggle('selected')">
+    <span class="priority-badge p-med">MEDIUM</span>
+    <div class="gap-num">Gap 2</div>
+    <div class="gap-title">Network MA / League Table</div>
+    <div class="gap-desc">Pairwise indirect comparison table across drug class members (Dapagliflozin vs Empagliflozin vs Sotagliflozin). Chart #18 in GLP1 and Colchicine.</div>
+    <div class="gap-compare">
+      <span class="chip chip-has">GLP1 ✓</span>
+      <span class="chip chip-has">Colchicine ✓</span>
+      <span class="chip chip-has">Finerenone ✓</span>
+      <span class="chip chip-missing">SGLT2 ✗</span>
+    </div>
+  </div>
+
+  <!-- Gap 3 -->
+  <div class="gap-card" onclick="this.classList.toggle('selected')">
+    <span class="priority-badge p-high">HIGH IMPACT</span>
+    <div class="gap-num">Gap 3</div>
+    <div class="gap-title">RoB Sensitivity Toggle</div>
+    <div class="gap-desc">"Low-Risk Only" button that instantly re-pools excluding trials with Some Concerns / High RoB. One-click sensitivity analysis — present in all other metas.</div>
+    <div class="gap-compare">
+      <span class="chip chip-has">GLP1 ✓</span>
+      <span class="chip chip-has">Colchicine ✓</span>
+      <span class="chip chip-has">Finerenone ✓</span>
+      <span class="chip chip-missing">SGLT2 ✗</span>
+    </div>
+  </div>
+
+  <!-- Gap 4 -->
+  <div class="gap-card" onclick="this.classList.toggle('selected')">
+    <span class="priority-badge p-high">HIGH IMPACT</span>
+    <div class="gap-num">Gap 4</div>
+    <div class="gap-title">Trial Exclusion Toggles</div>
+    <div class="gap-desc">Named trial exclusion buttons (e.g., "Exclude SOLOIST-WHF" since it uses sotagliflozin, a dual SGLT1/2i). Colchicine has "Exclude COPS", GLP1 has "Exclude ELIXA".</div>
+    <div class="gap-compare">
+      <span class="chip chip-has">GLP1 ✓</span>
+      <span class="chip chip-has">Colchicine ✓</span>
+      <span class="chip chip-missing">SGLT2 ✗</span>
+    </div>
+  </div>
+
+  <!-- Gap 5 -->
+  <div class="gap-card" onclick="this.classList.toggle('selected')">
+    <span class="priority-badge p-high">HIGH IMPACT</span>
+    <div class="gap-num">Gap 5</div>
+    <div class="gap-title">Multi-Dimension Subgroup Selector</div>
+    <div class="gap-desc">Currently only EF phenotype (HFrEF vs HFpEF). Could add: Drug (Dapa vs Empa vs Sota), Diabetes status, Trial era, LVEF cutoff, Primary outcome definition. GLP1 has 7 dimensions.</div>
+    <div class="gap-compare">
+      <span class="chip chip-has">GLP1: 7 dims</span>
+      <span class="chip chip-partial">Colchicine: 2 dims</span>
+      <span class="chip chip-missing">SGLT2: 1 dim</span>
+    </div>
+  </div>
+
+  <!-- Gap 6 -->
+  <div class="gap-card" onclick="this.classList.toggle('selected')">
+    <span class="priority-badge p-med">MEDIUM</span>
+    <div class="gap-num">Gap 6</div>
+    <div class="gap-title">Richer Evidence Panels</div>
+    <div class="gap-desc">GLP1 trials have up to 9 evidence panels each (enrollment, primary/secondary outcomes, RoB basis, demographics, endpoint concordance, pharmacology). SGLT2 has ~5 per trial.</div>
+    <div class="gap-compare">
+      <span class="chip chip-has">GLP1: ~9/trial</span>
+      <span class="chip chip-partial">Colchicine: 5-7</span>
+      <span class="chip chip-partial">SGLT2: ~5</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Visual Companion — SGLT2 HF Review Improvement Planning
+</div>
+
+</body>
+</html>

@@ -1,0 +1,552 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Living Meta Transparency Review</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .review-grid,
+    .mini-grid,
+    .evidence-grid,
+    .citation-grid {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .review-grid {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 1rem;
+    }
+
+    .mini-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-top: 0.9rem;
+    }
+
+    .evidence-grid,
+    .citation-grid {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      margin-top: 0.9rem;
+    }
+
+    .review-card,
+    .finding-card,
+    .citation-card,
+    .evidence-card,
+    .code-block,
+    .table-wrap {
+      border: 1px solid var(--line);
+      background: rgba(255, 250, 242, 0.92);
+      box-shadow: var(--shadow);
+      border-radius: 20px;
+      padding: 1rem;
+    }
+
+    .severity {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border: 1px solid var(--line);
+    }
+
+    .sev-critical { background: rgba(127, 29, 29, 0.14); color: #991b1b; }
+    .sev-high { background: rgba(185, 28, 28, 0.08); color: #9f1239; }
+    .sev-moderate { background: rgba(202, 138, 4, 0.12); color: #92400e; }
+    .sev-good { background: rgba(6, 95, 70, 0.1); color: #065f46; }
+
+    .code-block pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .review-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    .review-table th,
+    .review-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 0.7rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .review-table th {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .flag {
+      display: inline-flex;
+      min-width: 2.3rem;
+      justify-content: center;
+      padding: 0.18rem 0.42rem;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      border: 1px solid var(--line);
+    }
+
+    .flag-yes { background: rgba(6, 95, 70, 0.1); color: #065f46; }
+    .flag-no { background: rgba(127, 29, 29, 0.12); color: #991b1b; }
+    .flag-mixed { background: rgba(146, 64, 14, 0.12); color: #92400e; }
+
+    .local-ref {
+      display: block;
+      margin-top: 0.4rem;
+      font-family: Consolas, monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .small-note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Portfolio Review</div>
+      <h1>Living Meta Transparency Review</h1>
+      <p>
+        Multi-persona review of the current living-meta portfolio with emphasis on full transparency:
+        search strings, inclusion and exclusion traceability, source excerpts, demographics, risk of bias,
+        GRADE, reviewer-facing statistical validation, and comparison against published meta-analyses on the
+        same topic. Review date: <code>2026-03-28</code>.
+      </p>
+      <div class="nav-grid">
+        <a class="nav-card" href="index.html">
+          <div class="mini">Atlas</div>
+          <strong>Original file inventory</strong>
+          <div class="note">Browse the original project files across `C:\Projects` and `C:\HTML apps`.</div>
+        </a>
+        <a class="nav-card" href="library.html">
+          <div class="mini">Library</div>
+          <strong>Centralized copy library</strong>
+          <div class="note">Open the copied working set in `C:\Living metas\Library`.</div>
+        </a>
+        <a class="nav-card" href="review.html">
+          <div class="mini">Review</div>
+          <strong>Consolidation review</strong>
+          <div class="note">See the folder-organization guidance and control-center links.</div>
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-card">
+          <div class="mini">Entry Points Reviewed</div>
+          <div class="value">7</div>
+          <div class="note">Finerenone, TEER, PFA, Watchman/Amulet, ESC ACS, engine, and base app.</div>
+        </div>
+        <div class="stat-card">
+          <div class="mini">Reviewer-Ready</div>
+          <div class="value">2</div>
+          <div class="note">Finerenone family and Watchman/Amulet are closest to publication-grade transparency.</div>
+        </div>
+        <div class="stat-card">
+          <div class="mini">WebR Present</div>
+          <div class="value">1</div>
+          <div class="note">Only the Finerenone review family currently runs in-browser R validation.</div>
+        </div>
+        <div class="stat-card">
+          <div class="mini">Family Template Proof</div>
+          <div class="value">47</div>
+          <div class="note">Finerenone HTML files containing WebR validation hooks; 51 contain PRISMA/GRADE/search-history markers.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Findings</h2>
+          <p class="muted">Ordered by severity, with explicit local evidence and external benchmark context.</p>
+        </div>
+      </div>
+      <div class="review-grid">
+        <article class="finding-card">
+          <div class="severity sev-critical">Critical</div>
+          <h3>Transparency is not uniform across the portfolio</h3>
+          <p class="small-note">
+            Only the Finerenone family currently exposes the full reviewer stack in one place:
+            visible search strings, eligibility workflow, evidence excerpts, demographics,
+            RoB, GRADE, PRISMA, search-history logging, and in-browser WebR.
+          </p>
+          <span class="local-ref">Evidence: [FINERENONE_REVIEW.html](file:///C:/Projects/Finrenone/FINERENONE_REVIEW.html) lines 485-521, 616, 924-941, 12584-12695</span>
+          <span class="local-ref">Contrast: [living-meta-engine.html](file:///C:/Projects/living-meta-engine/living-meta-engine.html) lines 129, 198-201, 299 only expose RoB-oriented infrastructure without acquisition or evidence-ledger transparency.</span>
+        </article>
+
+        <article class="finding-card">
+          <div class="severity sev-high">High</div>
+          <h3>Most topic pages remain constrained-source reviews, not full publication-level systematic reviews</h3>
+          <p class="small-note">
+            Finerenone explicitly states that eligibility and endpoint fit are verified against CT.gov plus
+            PubMed/OpenAlex abstracts with no full-text extraction, and several pages warn readers to verify
+            registry-derived values against published manuscripts before finalizing.
+          </p>
+          <span class="local-ref">Evidence: [FINERENONE_REVIEW.html](file:///C:/Projects/Finrenone/FINERENONE_REVIEW.html) line 505, line 880</span>
+          <span class="local-ref">Evidence: [TEER_LIVING_META.html](file:///C:/Projects/Tricuspid_TEER_LivingMeta/TEER_LIVING_META.html) line 1926</span>
+          <span class="local-ref">Evidence: [PFA_AF_LivingMeta.html](file:///C:/Projects/PFA_AF_LivingMeta/PFA_AF_LivingMeta.html) lines 886, 1100</span>
+          <span class="local-ref">Evidence: [index.html](file:///C:/Projects/LivingMeta_Watchman_Amulet/index.html) line 554</span>
+        </article>
+
+        <article class="finding-card">
+          <div class="severity sev-high">High</div>
+          <h3>Reviewer-facing validation is inconsistent</h3>
+          <p class="small-note">
+            TEER and PFA export or display R validation scripts, but they do not execute browser-side WebR.
+            ESC ACS, the base living-meta app, and the engine also lack in-browser reviewer validation.
+            That is a serious gap if these are intended as reviewer-auditable standalone artifacts.
+          </p>
+          <span class="local-ref">Evidence: [TEER_LIVING_META.html](file:///C:/Projects/Tricuspid_TEER_LivingMeta/TEER_LIVING_META.html) line 2897</span>
+          <span class="local-ref">Evidence: [PFA_AF_LivingMeta.html](file:///C:/Projects/PFA_AF_LivingMeta/PFA_AF_LivingMeta.html) lines 393, 2092, 2350</span>
+          <span class="local-ref">Evidence: [FINERENONE_REVIEW.html](file:///C:/Projects/Finrenone/FINERENONE_REVIEW.html) lines 924-941, 12584-12695</span>
+        </article>
+
+        <article class="finding-card">
+          <div class="severity sev-high">High</div>
+          <h3>Watchman/Amulet has a provenance-display bug</h3>
+          <p class="small-note">
+            The page labels a panel as "OpenAlex Hits" but writes those values into an element with the
+            `search-hits-pubmed` identifier. That makes the acquisition counters harder to trust during review.
+          </p>
+          <span class="local-ref">Evidence: [index.html](file:///C:/Projects/LivingMeta_Watchman_Amulet/index.html) lines 341, 1433, 1436</span>
+        </article>
+
+        <article class="finding-card">
+          <div class="severity sev-moderate">Moderate</div>
+          <h3>ESC ACS Studio is topic-rich but transparency-light</h3>
+          <p class="small-note">
+            ESC ACS exposes raw records, ROB2, and GRADE, but it does not visibly expose PRISMA,
+            demographics, evidence excerpts, or WebR in the main entry point. It looks more like a synthesis
+            studio than a publication-ready living review.
+          </p>
+          <span class="local-ref">Evidence: [index.html](file:///C:/Projects/esc-acs-living-meta/index.html) lines 93, 143-146, 188-191, 450-455, 599, 614</span>
+        </article>
+
+        <article class="finding-card">
+          <div class="severity sev-moderate">Moderate</div>
+          <h3>The generic app and engine are infrastructure, not review-grade outputs</h3>
+          <p class="small-note">
+            The base app points only to CT.gov as a data source, while the engine centers charts and RoB
+            without a visible acquisition, screening, evidence-ledger, or validation layer. They should not
+            be presented as equivalent to the stronger disease-specific pages.
+          </p>
+          <span class="local-ref">Evidence: [index.html](file:///C:/HTML%20apps/living-meta/index.html) lines 7, 67</span>
+          <span class="local-ref">Evidence: [living-meta-engine.html](file:///C:/Projects/living-meta-engine/living-meta-engine.html) lines 129, 198-201, 299</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Persona Review</h2>
+          <p class="muted">What each reviewer type would care about most.</p>
+        </div>
+      </div>
+      <div class="mini-grid">
+        <article class="review-card">
+          <div class="severity sev-good">Methods Reviewer</div>
+          <p class="small-note">Finerenone and Watchman/Amulet are the only current builds that read like explicit review protocols with visible search logic and PRISMA-ready reporting. TEER and PFA are close but remain slimmer and more manual.</p>
+        </article>
+        <article class="review-card">
+          <div class="severity sev-high">Evidence Provenance Reviewer</div>
+          <p class="small-note">The main portfolio risk is constrained-source extraction. Several apps correctly admit that values are registry-derived or abstract-linked and should be checked against publications, but that also means the current evidence layer is not yet self-sufficient.</p>
+        </article>
+        <article class="review-card">
+          <div class="severity sev-high">Statistics Reviewer</div>
+          <p class="small-note">Only Finerenone currently gives a browser-executable R check. TEER and PFA expose R scripts but still require trust that the user ran them. ESC ACS and the generic layers need a reviewer mode before they are publication-grade.</p>
+        </article>
+        <article class="review-card">
+          <div class="severity sev-moderate">Clinical Reviewer</div>
+          <p class="small-note">Watchman/Amulet is strong on clinically relevant protocol caveats, especially indirectness around Watchman 2.5 versus FLX. TEER and PFA provide useful landmarks, but full publication reconciliation still sits outside the app.</p>
+        </article>
+        <article class="review-card">
+          <div class="severity sev-moderate">UX Reviewer</div>
+          <p class="small-note">The best pages expose audit logs, extraction toggles, and SoF tables. The weak pages hide too much of the review process behind synthesis outputs, which is the wrong trade-off for skeptical readers and peer reviewers.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Project Matrix</h2>
+          <p class="muted">Representative entry-point audit against the transparency stack you requested.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="review-table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Search Terms</th>
+              <th>Eligibility</th>
+              <th>Source Excerpts</th>
+              <th>Demographics</th>
+              <th>RoB</th>
+              <th>GRADE</th>
+              <th>PRISMA</th>
+              <th>WebR</th>
+              <th>Reviewer Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="file:///C:/Projects/Finrenone/FINERENONE_REVIEW.html">Finerenone family template</a></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td>Strongest reviewer build. Major caveat: constrained-source workflow and explicit no-full-text extraction.</td>
+            </tr>
+            <tr>
+              <td><a href="file:///C:/Projects/Tricuspid_TEER_LivingMeta/TEER_LIVING_META.html">Tricuspid TEER</a></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-mixed">Mixed</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td>Good report/export layer with R script export; still marked for verification against primary publications.</td>
+            </tr>
+            <tr>
+              <td><a href="file:///C:/Projects/PFA_AF_LivingMeta/PFA_AF_LivingMeta.html">PFA AF</a></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-mixed">Mixed</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td>Near-ready, but evidence panels still fall back to "manual entry, verify against manuscript."</td>
+            </tr>
+            <tr>
+              <td><a href="file:///C:/Projects/LivingMeta_Watchman_Amulet/index.html">Watchman vs Amulet</a></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td>Strong protocol and evidence-citation layer; fix the OpenAlex counter bug and add WebR to make reviewer validation tighter.</td>
+            </tr>
+            <tr>
+              <td><a href="file:///C:/Projects/esc-acs-living-meta/index.html">ESC ACS Studio</a></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-mixed">Mixed</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td>Good synthesis studio, not yet a self-auditing living review.</td>
+            </tr>
+            <tr>
+              <td><a href="file:///C:/Projects/living-meta-engine/living-meta-engine.html">Living Meta Engine</a></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-yes">Yes</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td>Infrastructure component. Useful internal engine, not reviewer-facing evidence synthesis on its own.</td>
+            </tr>
+            <tr>
+              <td><a href="file:///C:/HTML%20apps/living-meta/index.html">Base living-meta app</a></td>
+              <td><span class="flag flag-mixed">Mixed</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td><span class="flag flag-no">No</span></td>
+              <td>Base shell. Not comparable to the stronger disease-specific pages.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Published-Meta Benchmarks</h2>
+          <p class="muted">PubMed-only benchmark search used to compare local scope with conventional published meta-analyses.</p>
+        </div>
+      </div>
+      <div class="citation-grid">
+        <article class="citation-card">
+          <div class="severity sev-good">Finerenone</div>
+          <p class="small-note">
+            Recent published finerenone meta-analyses searched PubMed plus Embase/CENTRAL/ClinicalTrials.gov
+            and pooled 8 to 9 randomized trials with 21,200 to 21,731 participants.
+          </p>
+          <p class="small-note">
+            Local build strength: transparent protocol, source excerpts, PRISMA, GRADE, WebR.
+            Local gap: it openly remains a constrained-source workflow with no full-text extraction.
+          </p>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/41166566/" target="_blank" rel="noopener">PubMed 41166566</a>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/39911073/" target="_blank" rel="noopener">PubMed 39911073</a>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/36571667/" target="_blank" rel="noopener">PubMed 36571667</a>
+        </article>
+
+        <article class="citation-card">
+          <div class="severity sev-good">Tricuspid TEER</div>
+          <p class="small-note">
+            Published TEER meta-analyses search PubMed/Scopus/Cochrane or PubMed/Embase/Cochrane and
+            frame the question as comparative effectiveness or device-specific outcomes.
+          </p>
+          <p class="small-note">
+            Local build strength: PRISMA, GRADE, demographics, exportable R script.
+            Local gap: no browser-side WebR and visible verification warnings against primary publications.
+          </p>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/40810290/" target="_blank" rel="noopener">PubMed 40810290</a>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/37473817/" target="_blank" rel="noopener">PubMed 37473817</a>
+        </article>
+
+        <article class="citation-card">
+          <div class="severity sev-good">PFA AF</div>
+          <p class="small-note">
+            Recent published meta-analyses search PubMed plus Embase/Cochrane and increasingly use
+            Bayesian random-effects models, IPD reconstruction from Kaplan-Meier curves, and explicit
+            observational-versus-RCT contrasts.
+          </p>
+          <p class="small-note">
+            Local build strength: PRISMA, GRADE, audit log, R validation export.
+            Local gap: current acquisition is CT.gov plus PubMed cross-check, not the broader full review stack.
+          </p>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/41759868/" target="_blank" rel="noopener">PubMed 41759868</a>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/41578543/" target="_blank" rel="noopener">PubMed 41578543</a>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/39416254/" target="_blank" rel="noopener">PubMed 39416254</a>
+        </article>
+
+        <article class="citation-card">
+          <div class="severity sev-good">Watchman vs Amulet</div>
+          <p class="small-note">
+            Published device-comparison meta-analyses search PubMed, Embase, and Cochrane and explicitly
+            separate legacy WATCHMAN from Watchman FLX-era evidence.
+          </p>
+          <p class="small-note">
+            Local build strength: strongest protocol caveats, indirectness handling, source citations, and PRISMA/GRADE display.
+            Local gap: missing browser-side WebR and one acquisition counter bug.
+          </p>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/41397490/" target="_blank" rel="noopener">PubMed 41397490</a>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/38948665/" target="_blank" rel="noopener">PubMed 38948665</a>
+        </article>
+
+        <article class="citation-card">
+          <div class="severity sev-moderate">ESC ACS Studio</div>
+          <p class="small-note">
+            No single like-for-like published comparator was assessed, because the project is a multi-topic ACS synthesis
+            studio rather than one fixed clinical question. The right benchmark here is topic-specific: each selected ACS
+            topic should surface prior meta-analysis trial IDs, search strings, PRISMA, and a reviewer validation mode.
+          </p>
+          <p class="small-note">Current local evidence already hints at this with a dedicated "Prior meta-analysis trial IDs" input, but the reviewer layer is not yet built through.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Audit Trail</h2>
+          <p class="muted">Queries used for this portfolio review so readers can replay the audit.</p>
+        </div>
+      </div>
+      <div class="evidence-grid">
+        <article class="code-block">
+          <div class="mini">Local Code Audit Queries</div>
+          <pre>rg -n -i "webr|webR|prisma|search terms|search strategy|eligibility|inclusion|exclusion|abstract|record excerpt|demograph|risk of bias|grade|certainty|pubmed|medline|embase|meta-analysis|forest" C:\Projects\Finrenone C:\Projects\Tricuspid_TEER_LivingMeta C:\Projects\PFA_AF_LivingMeta C:\Projects\esc-acs-living-meta C:\Projects\LivingMeta_Watchman_Amulet C:\Projects\living-meta-engine C:\HTML apps\living-meta
+
+Select-String targeted on representative files for:
+- visible search sources and exact search strings
+- inclusion / exclusion / eligibility workflow
+- evidence excerpts and manuscript-verification warnings
+- demographics, RoB, GRADE, PRISMA
+- WebR or R validation hooks
+- raw-record, audit-log, or search-history markers</pre>
+        </article>
+        <article class="code-block">
+          <div class="mini">Literature Benchmark Queries</div>
+          <pre>site:pubmed.ncbi.nlm.nih.gov finerenone meta-analysis randomized controlled trials
+site:pubmed.ncbi.nlm.nih.gov tricuspid TEER meta-analysis tricuspid regurgitation
+site:pubmed.ncbi.nlm.nih.gov pulsed field ablation thermal ablation atrial fibrillation Bayesian meta-analysis
+site:pubmed.ncbi.nlm.nih.gov Watchman FLX Amulet meta-analysis
+
+Benchmark rule used here:
+- PubMed-indexed meta-analyses only
+- Prefer the most recent reviews and those with explicit database-search methods
+- Compare search breadth, full-text/record handling, and reviewer-validation transparency, not just pooled effect size</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Priority Backlog</h2>
+          <p class="muted">What to do next if the goal is reviewer-proof transparency across the whole portfolio.</p>
+        </div>
+      </div>
+      <div class="review-grid">
+        <article class="review-card">
+          <div class="severity sev-critical">1</div>
+          <p class="small-note">Lift the Finerenone reviewer layer into TEER, PFA, Watchman, and ESC ACS: visible search strings, search-history log, evidence ledger, manuscript-verification flags, and browser-side WebR.</p>
+        </article>
+        <article class="review-card">
+          <div class="severity sev-high">2</div>
+          <p class="small-note">Add per-record include and exclude reasons that remain visible after selection, not just PRISMA counts. Reviewers should be able to audit each excluded abstract from inside the page.</p>
+        </article>
+        <article class="review-card">
+          <div class="severity sev-high">3</div>
+          <p class="small-note">Add a "published-meta comparator" panel to each disease-specific review with direct links, search dates, database scope, trial overlap, and effect-size deltas versus the local synthesis.</p>
+        </article>
+        <article class="review-card">
+          <div class="severity sev-high">4</div>
+          <p class="small-note">Fix provenance-display bugs before claiming full transparency, starting with the Watchman OpenAlex counter wiring.</p>
+        </article>
+        <article class="review-card">
+          <div class="severity sev-moderate">5</div>
+          <p class="small-note">Require every app to state whether it is CT.gov-only, abstract-linked, or full-text reconciled. Reviewers should never have to infer the evidence ceiling from scattered notes.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+

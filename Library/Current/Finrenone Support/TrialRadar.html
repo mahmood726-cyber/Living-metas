@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrialRadar v1.0 — Living Clinical Trial Surveillance</title>
+<style>
+  :root {
+    --bg: #0f172a; --bg2: #1e293b; --bg3: #334155; --card: #1e293b;
+    --text: #f1f5f9; --text2: #cbd5e1; --muted: #94a3b8;
+    --border: #334155; --accent: #3b82f6; --accent2: #8b5cf6;
+    --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+    --radius: 8px;
+  }
+  body.light {
+    --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --card: #ffffff;
+    --text: #0f172a; --text2: #475569; --muted: #64748b;
+    --border: #e2e8f0; --accent: #2563eb; --accent2: #7c3aed;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+  .header { background: linear-gradient(135deg, #1e1b4b 0%, #3b82f6 50%, #8b5cf6 100%); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { color: white; font-size: 1.3rem; }
+  .header h1 span { font-size: 0.7rem; opacity: 0.7; margin-left: 6px; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+  .grid { display: grid; gap: 16px; }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .card-title { font-size: 0.85rem; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+
+  .stat-card { text-align: center; padding: 16px; }
+  .stat-value { font-size: 2rem; font-weight: 800; }
+  .stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+  .badge { display: inline-flex; padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 600; }
+  .badge-new { background: #22c55e33; color: var(--success); }
+  .badge-changed { background: #f59e0b33; color: var(--warning); }
+  .badge-ghost { background: #ef444433; color: var(--danger); }
+  .badge-completed { background: #3b82f633; color: var(--accent); }
+
+  .topic-chip { display: inline-block; padding: 4px 10px; border-radius: 14px; font-size: 0.72rem; font-weight: 600; margin: 2px; cursor: pointer; border: 1px solid var(--border); background: var(--bg2); }
+  .topic-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .alert-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.82rem; }
+  .alert-high { background: var(--danger); background: rgba(239,68,68,0.1); border-left: 3px solid var(--danger); }
+  .alert-medium { background: rgba(245,158,11,0.1); border-left: 3px solid var(--warning); }
+  .alert-low { background: rgba(59,130,246,0.1); border-left: 3px solid var(--accent); }
+
+  input, select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-size: 0.82rem; }
+  input:focus { outline: none; border-color: var(--accent); }
+
+  .trial-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .trial-table th { text-align: left; padding: 8px; background: var(--bg3); border-bottom: 2px solid var(--border); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; color: var(--muted); }
+  .trial-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .trial-table tr:hover { background: var(--bg3); }
+
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>TrialRadar<span>v1.0 — Living Clinical Trial Surveillance</span></h1>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,0.3);" onclick="document.body.classList.toggle('light')">Theme</button>
+    <button class="btn btn-primary" id="scanBtn" onclick="runScan()">Scan CT.gov</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- Stats Row -->
+<div class="grid grid-4" style="margin-bottom:16px;">
+  <div class="card stat-card"><div class="stat-value" id="statTopics" style="color:var(--accent);">40</div><div class="stat-label">Topics Monitored</div></div>
+  <div class="card stat-card"><div class="stat-value" id="statTrials" style="color:var(--success);">0</div><div class="stat-label">Trials Tracked</div></div>
+  <div class="card stat-card"><div class="stat-value" id="statAlerts" style="color:var(--warning);">0</div><div class="stat-label">New Alerts</div></div>
+  <div class="card stat-card"><div class="stat-value" id="statGhosts" style="color:var(--danger);">0</div><div class="stat-label">Ghost Protocols</div></div>
+</div>
+
+<!-- Topic Chips -->
+<div class="card">
+  <div class="card-title">Monitored Topics</div>
+  <div id="topicChips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+</div>
+
+<!-- Alerts -->
+<div class="card" style="margin-top:16px;">
+  <div class="card-title">Alerts <span id="alertCount" class="badge badge-new">0 new</span></div>
+  <div id="alertsArea">
+    <p style="color:var(--muted);font-size:0.82rem;">Click "Scan CT.gov" to check for updates across all monitored topics.</p>
+  </div>
+</div>
+
+<!-- Trial Table -->
+<div class="card" style="margin-top:16px;">
+  <div class="card-title">Trial Registry <span id="trialCount" style="font-size:0.72rem;color:var(--muted);font-weight:400;"></span></div>
+  <div style="display:flex;gap:8px;margin-bottom:8px;">
+    <input id="searchBox" placeholder="Search trials..." style="flex:1;" oninput="filterTrials()">
+    <select id="statusFilter" onchange="filterTrials()">
+      <option value="">All Statuses</option>
+      <option value="COMPLETED">Completed</option>
+      <option value="RECRUITING">Recruiting</option>
+      <option value="ACTIVE_NOT_RECRUITING">Active, not recruiting</option>
+      <option value="TERMINATED">Terminated</option>
+    </select>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="trial-table">
+      <thead><tr><th>NCT ID</th><th>Title</th><th>Topic</th><th>Phase</th><th>N</th><th>Status</th><th>Results</th><th>Lag</th></tr></thead>
+      <tbody id="trialTableBody"><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">Run a scan to populate the trial registry.</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Ghost Protocols -->
+<div class="card" style="margin-top:16px;">
+  <div class="card-title">Ghost Protocols <span style="font-size:0.72rem;color:var(--muted);font-weight:400;">(completed trials without published results)</span></div>
+  <div id="ghostArea">
+    <p style="color:var(--muted);font-size:0.82rem;">Ghost protocols will be detected after scanning.</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   TrialRadar v1.0 — Living Clinical Trial Surveillance Engine
+   ═══════════════════════════════════════════════════════════════ */
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── Topic Definitions (from LivingMeta CONFIG_LIBRARY) ── */
+const TOPICS = [
+  { id: 'colchicine', name: 'Colchicine CVD', search: 'colchicine AND cardiovascular', color: '#ef4444' },
+  { id: 'finerenone', name: 'Finerenone', search: 'finerenone', color: '#f59e0b' },
+  { id: 'sglt2_hf', name: 'SGLT2i HF', search: '(dapagliflozin OR empagliflozin) AND heart failure', color: '#22c55e' },
+  { id: 'glp1', name: 'GLP-1 RA', search: '(semaglutide OR liraglutide OR tirzepatide) AND cardiovascular', color: '#3b82f6' },
+  { id: 'pcsk9', name: 'PCSK9', search: '(evolocumab OR alirocumab OR inclisiran) AND cardiovascular', color: '#8b5cf6' },
+  { id: 'sglt2_ckd', name: 'SGLT2i CKD', search: '(dapagliflozin OR empagliflozin OR canagliflozin) AND kidney', color: '#06b6d4' },
+  { id: 'arni', name: 'ARNI HF', search: 'sacubitril AND heart failure', color: '#ec4899' },
+  { id: 'doac_af', name: 'DOACs AF', search: '(apixaban OR rivaroxaban OR edoxaban) AND atrial fibrillation', color: '#f97316' },
+  { id: 'iron_hf', name: 'IV Iron HF', search: 'ferric carboxymaltose AND heart failure', color: '#14b8a6' },
+  { id: 'obesity', name: 'Obesity Agents', search: '(semaglutide OR tirzepatide) AND (obesity OR overweight)', color: '#a855f7' },
+  { id: 'bp', name: 'Intensive BP', search: 'intensive blood pressure', color: '#64748b' },
+  { id: 'mavacamten', name: 'Mavacamten HCM', search: 'mavacamten AND cardiomyopathy', color: '#f43f5e' },
+  { id: 'attr', name: 'ATTR-CM', search: '(tafamidis OR acoramidis OR vutrisiran) AND amyloidosis', color: '#0ea5e9' },
+  { id: 'canakinumab', name: 'Anti-IL-1b', search: 'canakinumab AND cardiovascular', color: '#84cc16' },
+  { id: 'sotatercept', name: 'Sotatercept PAH', search: 'sotatercept AND pulmonary', color: '#d946ef' },
+];
+
+let allTrials = [];
+let alerts = [];
+let selectedTopics = new Set(TOPICS.map(t => t.id));
+
+/* ── Render Topics ── */
+function renderTopics() {
+  const area = document.getElementById('topicChips');
+  area.innerHTML = TOPICS.map(t =>
+    '<span class="topic-chip' + (selectedTopics.has(t.id) ? ' active' : '') + '" style="' + (selectedTopics.has(t.id) ? 'background:' + t.color + ';border-color:' + t.color + ';color:white;' : '') + '" onclick="toggleTopic(\'' + t.id + '\')">' + escapeHtml(t.name) + '</span>'
+  ).join('');
+  document.getElementById('statTopics').textContent = selectedTopics.size;
+}
+
+function toggleTopic(id) {
+  if (selectedTopics.has(id)) selectedTopics.delete(id); else selectedTopics.add(id);
+  renderTopics();
+}
+
+/* ── CT.gov API Scanner ── */
+async function runScan() {
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true; btn.textContent = 'Scanning...';
+  btn.classList.add('pulse');
+
+  allTrials = [];
+  alerts = [];
+  const activeTopics = TOPICS.filter(t => selectedTopics.has(t.id));
+
+  for (let i = 0; i < activeTopics.length; i++) {
+    const topic = activeTopics[i];
+    btn.textContent = 'Scanning ' + (i + 1) + '/' + activeTopics.length + '...';
+    try {
+      const url = 'https://clinicaltrials.gov/api/v2/studies?format=json&pageSize=20'
+        + '&query.term=' + encodeURIComponent(topic.search)
+        + '&filter.overallStatus=COMPLETED,ACTIVE_NOT_RECRUITING,RECRUITING,TERMINATED'
+        + '&sort=LastUpdatePostDate:desc';
+      const resp = await fetch(url);
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      const studies = data.studies ?? [];
+      for (const s of studies) {
+        const ps = s.protocolSection ?? {};
+        const ident = ps.identificationModule ?? {};
+        const status = ps.statusModule ?? {};
+        const design = ps.designModule ?? {};
+        const nctId = ident.nctId ?? '';
+        if (allTrials.some(t => t.nctId === nctId)) continue; /* Dedup */
+
+        const completionDate = status.completionDateStruct?.date ?? '';
+        const resultsDate = status.resultsFirstPostDateStruct?.date ?? '';
+        const isCompleted = (status.overallStatus ?? '') === 'COMPLETED';
+        const hasResults = s.hasResults ?? false;
+
+        /* Calculate reporting lag */
+        let lagMonths = null;
+        if (completionDate && resultsDate) {
+          const cd = new Date(completionDate);
+          const rd = new Date(resultsDate);
+          lagMonths = Math.round((rd - cd) / (30.44 * 24 * 60 * 60 * 1000));
+        }
+
+        /* Ghost protocol detection */
+        const isTerminated = (status.overallStatus ?? '') === 'TERMINATED';
+        const isGhost = (isCompleted || isTerminated) && !hasResults;
+        const completionYear = completionDate ? parseInt(completionDate.substring(0, 4)) : null;
+        const cutoffDate = new Date(); cutoffDate.setMonth(cutoffDate.getMonth() - 12);
+        const isOldGhost = isGhost && completionDate && new Date(completionDate) < cutoffDate;
+
+        const trial = {
+          nctId, topic: topic.id, topicName: topic.name, topicColor: topic.color,
+          title: ident.briefTitle ?? '',
+          acronym: ident.acronym ?? '',
+          phase: (design.phases ?? []).join(', '),
+          enrollment: design.enrollmentInfo?.count ?? 0,
+          status: status.overallStatus ?? '',
+          hasResults, completionDate, resultsDate, lagMonths,
+          isGhost, isOldGhost,
+          lastUpdate: status.lastUpdatePostDateStruct?.date ?? ''
+        };
+        allTrials.push(trial);
+
+        /* Generate alerts */
+        if (hasResults && resultsDate) {
+          const rd = new Date(resultsDate);
+          const daysAgo = (Date.now() - rd.getTime()) / (24 * 60 * 60 * 1000);
+          if (daysAgo < 90) {
+            alerts.push({ type: 'new_results', severity: 'high', trial, msg: escapeHtml(trial.acronym || trial.nctId) + ' posted results ' + Math.round(daysAgo) + ' days ago' });
+          }
+        }
+        if (isOldGhost && trial.enrollment >= 100) {
+          alerts.push({ type: 'ghost', severity: 'medium', trial, msg: escapeHtml(trial.acronym || trial.nctId) + ': completed ' + (completionYear ?? '?') + ', N=' + trial.enrollment + ', no results posted' });
+        }
+        if (lagMonths != null && lagMonths > 24) {
+          alerts.push({ type: 'lag', severity: 'low', trial, msg: escapeHtml(trial.acronym || trial.nctId) + ': ' + lagMonths + ' month reporting lag' });
+        }
+      }
+    } catch (e) {
+      console.warn('Scan failed for ' + topic.id + ':', e.message);
+    }
+    await new Promise(r => setTimeout(r, 400)); /* Rate limit */
+  }
+
+  /* Update stats */
+  document.getElementById('statTrials').textContent = allTrials.length;
+  document.getElementById('statAlerts').textContent = alerts.filter(a => a.severity === 'high').length;
+  document.getElementById('statGhosts').textContent = allTrials.filter(t => t.isGhost).length;
+
+  renderAlerts();
+  renderTrials();
+  renderGhosts();
+
+  btn.disabled = false; btn.textContent = 'Scan CT.gov'; btn.classList.remove('pulse');
+}
+
+/* ── Render Alerts ── */
+function renderAlerts() {
+  const area = document.getElementById('alertsArea');
+  document.getElementById('alertCount').textContent = alerts.length + ' new';
+  if (alerts.length === 0) {
+    area.innerHTML = '<p style="color:var(--muted);">No alerts detected. All topics appear up to date.</p>';
+    return;
+  }
+  const sorted = alerts.sort((a, b) => ({ high: 0, medium: 1, low: 2 })[a.severity] - ({ high: 0, medium: 1, low: 2 })[b.severity]);
+  area.innerHTML = sorted.slice(0, 20).map(a => {
+    const cls = a.severity === 'high' ? 'alert-high' : a.severity === 'medium' ? 'alert-medium' : 'alert-low';
+    const icon = a.severity === 'high' ? '\u26A0' : a.severity === 'medium' ? '\uD83D\uDC7B' : '\u23F1';
+    const badge = a.type === 'new_results' ? '<span class="badge badge-new">NEW RESULTS</span>' : a.type === 'ghost' ? '<span class="badge badge-ghost">GHOST</span>' : '<span class="badge badge-changed">LAG</span>';
+    return '<div class="alert-row ' + cls + '">' + icon + ' ' + badge + ' <span>' + a.msg + '</span> <a href="https://clinicaltrials.gov/study/' + encodeURIComponent(a.trial.nctId) + '" target="_blank" rel="noopener" style="color:var(--accent);font-size:0.75rem;margin-left:auto;">' + escapeHtml(a.trial.nctId) + '</a></div>';
+  }).join('');
+}
+
+/* ── Render Trials ── */
+function renderTrials() {
+  const body = document.getElementById('trialTableBody');
+  const search = (document.getElementById('searchBox').value ?? '').toLowerCase();
+  const statusF = document.getElementById('statusFilter').value;
+  let filtered = allTrials;
+  if (search) filtered = filtered.filter(t => (t.title + t.nctId + t.acronym + t.topicName).toLowerCase().includes(search));
+  if (statusF) filtered = filtered.filter(t => t.status === statusF);
+  document.getElementById('trialCount').textContent = filtered.length + ' of ' + allTrials.length + ' trials';
+
+  body.innerHTML = filtered.slice(0, 100).map(t => {
+    const statusColor = t.status === 'COMPLETED' ? 'var(--success)' : t.status.includes('RECRUITING') ? 'var(--accent)' : t.status === 'TERMINATED' ? 'var(--danger)' : 'var(--muted)';
+    const resultsIcon = t.hasResults ? '<span style="color:var(--success);">\u2714</span>' : (t.isGhost ? '<span style="color:var(--danger);">\u2716</span>' : '<span style="color:var(--muted);">\u2014</span>');
+    const lagBadge = t.lagMonths != null ? '<span style="color:' + (t.lagMonths <= 12 ? 'var(--success)' : t.lagMonths <= 24 ? 'var(--warning)' : 'var(--danger)') + ';">' + t.lagMonths + 'mo</span>' : '\u2014';
+    return '<tr>'
+      + '<td><a href="https://clinicaltrials.gov/study/' + encodeURIComponent(t.nctId) + '" target="_blank" rel="noopener" style="color:var(--accent);">' + escapeHtml(t.nctId) + '</a></td>'
+      + '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(t.acronym ? t.acronym + ': ' : '') + escapeHtml(t.title.substring(0, 60)) + '</td>'
+      + '<td><span style="color:' + t.topicColor + ';">\u25CF</span> ' + escapeHtml(t.topicName) + '</td>'
+      + '<td>' + escapeHtml(t.phase) + '</td>'
+      + '<td style="text-align:right;">' + (t.enrollment || 0).toLocaleString() + '</td>'
+      + '<td style="color:' + statusColor + ';">' + escapeHtml(t.status.replace(/_/g, ' ')) + '</td>'
+      + '<td style="text-align:center;">' + resultsIcon + '</td>'
+      + '<td style="text-align:center;">' + lagBadge + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function filterTrials() { renderTrials(); }
+
+/* ── Render Ghosts ── */
+function renderGhosts() {
+  const area = document.getElementById('ghostArea');
+  const ghosts = allTrials.filter(t => t.isGhost).sort((a, b) => (b.enrollment || 0) - (a.enrollment || 0));
+  if (ghosts.length === 0) {
+    area.innerHTML = '<p style="color:var(--success);">No ghost protocols detected. All completed trials have posted results.</p>';
+    return;
+  }
+  area.innerHTML = '<div style="overflow-x:auto;"><table class="trial-table"><thead><tr><th>NCT ID</th><th>Title</th><th>Topic</th><th>N</th><th>Completed</th><th>Severity</th></tr></thead><tbody>'
+    + ghosts.slice(0, 30).map(t => {
+      const year = t.completionDate?.substring(0, 4) ?? '?';
+      const severity = t.enrollment >= 1000 ? 'HIGH' : t.enrollment >= 200 ? 'MEDIUM' : 'LOW';
+      const sevColor = severity === 'HIGH' ? 'var(--danger)' : severity === 'MEDIUM' ? 'var(--warning)' : 'var(--muted)';
+      return '<tr><td><a href="https://clinicaltrials.gov/study/' + encodeURIComponent(t.nctId) + '" target="_blank" rel="noopener" style="color:var(--accent);">' + escapeHtml(t.nctId) + '</a></td>'
+        + '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(t.title.substring(0, 50)) + '</td>'
+        + '<td><span style="color:' + t.topicColor + ';">\u25CF</span> ' + escapeHtml(t.topicName) + '</td>'
+        + '<td style="text-align:right;">' + (t.enrollment || 0).toLocaleString() + '</td>'
+        + '<td>' + year + '</td>'
+        + '<td style="color:' + sevColor + ';font-weight:700;">' + severity + '</td></tr>';
+    }).join('')
+    + '</tbody></table></div>';
+}
+
+/* ── Init ── */
+renderTopics();
+</script>
+</body>
+</html>

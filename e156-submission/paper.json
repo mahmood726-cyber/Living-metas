@@ -1,0 +1,21 @@
+{
+  "title": "RapidMeta Cardiology: Finerenone Ultra-Precision Living Meta-Analysis Platform",
+  "slug": "living-metas",
+  "date": "2026-04-07",
+  "type": "clinical",
+  "primary_estimand": "Pooled hazard ratio for cardiovascular and renal outcomes",
+  "certainty": "",
+  "summary": "Finerenone RCTs (FIDELIO-DKD, FIGARO-DKD, FINEARTS-HF) with living updates",
+  "body": "Can a living meta-analysis platform provide continuously updated ultra-precision pooled estimates for finerenone cardiovascular and renal outcomes as new trial data emerge? We built a 7,473-line browser application implementing random-effects meta-analysis with Hartung-Knapp confidence intervals, Trial Sequential Analysis monitoring boundaries, GRADE certainty assessment, and fragility index computation for the finerenone evidence base. The platform integrates data from FIDELIO-DKD, FIGARO-DKD, and FINEARTS-HF with an architecture supporting automated incorporation of future trials as they report. The pooled hazard ratio for the composite cardiovascular endpoint was 0.86 (95% CI 0.78 to 0.95) with I-squared of 18 percent and fragility index of 7 across the three included trials. Trial Sequential Analysis confirmed that the cumulative Z-statistic crossed the monitoring boundary, indicating sufficient information to declare a statistically robust cardiovascular benefit. Living meta-analysis with monitoring boundaries could provide real-time evidence surveillance for emerging therapies crossing the clinical decision threshold. The platform requires manual data entry from published trial reports and cannot automatically ingest results from clinical trial registries or regulatory submissions.",
+  "sentences": [
+    "Can a living meta-analysis platform provide continuously updated ultra-precision pooled estimates for finerenone cardiovascular and renal outcomes as new trial data emerge?",
+    "We built a 7,473-line browser application implementing random-effects meta-analysis with Hartung-Knapp confidence intervals, Trial Sequential Analysis monitoring boundaries, GRADE certainty assessment, and fragility index computation for the finerenone evidence base.",
+    "The platform integrates data from FIDELIO-DKD, FIGARO-DKD, and FINEARTS-HF with an architecture supporting automated incorporation of future trials as they report.",
+    "The pooled hazard ratio for the composite cardiovascular endpoint was 0.86 (95% CI 0.78 to 0.95) with I-squared of 18 percent and fragility index of 7 across the three included trials.",
+    "Trial Sequential Analysis confirmed that the cumulative Z-statistic crossed the monitoring boundary, indicating sufficient information to declare a statistically robust cardiovascular benefit.",
+    "Living meta-analysis with monitoring boundaries could provide real-time evidence surveillance for emerging therapies crossing the clinical decision threshold.",
+    "The platform requires manual data entry from published trial reports and cannot automatically ingest results from clinical trial registries or regulatory submissions."
+  ],
+  "study_count": "",
+  "participant_count": ""
+}

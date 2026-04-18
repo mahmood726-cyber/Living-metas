@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Living Meta-Analysis Engine</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+/* ─── CSS Variables (dark/light) ─── */
+:root {
+  --bg: #0f1117; --bg2: #1a1d27; --bg3: #252836; --bg4: #2d3041;
+  --text: #e4e6eb; --text2: #a0a3b1; --text3: #6b6f80;
+  --accent: #6c8cff; --accent2: #4ecdc4; --green: #51cf66; --red: #ff6b6b; --orange: #ffa94d; --yellow: #ffd43b;
+  --border: #2d3041; --radius: 10px; --shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+[data-theme="light"] {
+  --bg: #f5f6fa; --bg2: #fff; --bg3: #eef0f5; --bg4: #dfe2ea;
+  --text: #1a1d27; --text2: #5a5d6e; --text3: #8b8fa0;
+  --border: #d8dae5; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+/* ─── Reset + Base ─── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+a { color: var(--accent); text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; font-size: 0.9rem; }
+
+/* ─── Header ─── */
+.header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.header h1 { font-size: 1.3rem; }
+.header h1 .disease { color: var(--accent); }
+.header-right { display: flex; gap: 8px; align-items: center; }
+.btn { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-size: 0.82rem; font-weight: 500; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { opacity: 0.9; }
+
+/* ─── Tabs ─── */
+.tabs { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; overflow-x: auto; }
+.tab { padding: 12px 20px; font-size: 0.85rem; color: var(--text2); border-bottom: 2px solid transparent; white-space: nowrap; cursor: pointer; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+/* ─── Panels ─── */
+.panel-container { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ─── Cards & Grid ─── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.card h3 { font-size: 0.95rem; margin-bottom: 12px; color: var(--text2); }
+
+/* ─── Stats Bar ─── */
+.stats-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 24px; text-align: center; flex: 1; min-width: 140px; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; }
+.stat-card .label { font-size: 0.78rem; color: var(--text2); margin-top: 4px; }
+.stat-card.accent .num { color: var(--accent); }
+.stat-card.green .num { color: var(--green); }
+.stat-card.red .num { color: var(--red); }
+.stat-card.orange .num { color: var(--orange); }
+
+/* ─── Table ─── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+th, td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; position: sticky; top: 0; cursor: pointer; white-space: nowrap; }
+th:hover { color: var(--accent); }
+tr:hover { background: var(--bg3); }
+
+/* ─── RoB ─── */
+.rob-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin: 0 2px; }
+.rob-low { background: var(--green); }
+.rob-some { background: var(--yellow); }
+.rob-high { background: var(--red); }
+
+/* ─── Badges ─── */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; }
+.badge-sig { background: rgba(81,207,102,0.15); color: var(--green); }
+.badge-ns { background: rgba(160,163,177,0.15); color: var(--text2); }
+.badge-new { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+/* ─── Forms ─── */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.form-group label { display: block; font-size: 0.8rem; color: var(--text2); margin-bottom: 4px; }
+.form-group input, .form-group select { width: 100%; padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); }
+.form-group input:focus, .form-group select:focus { border-color: var(--accent); outline: none; }
+
+/* ─── Audit Log ─── */
+.audit-log { max-height: 300px; overflow-y: auto; font-size: 0.8rem; }
+.audit-entry { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; }
+.audit-time { color: var(--text3); white-space: nowrap; min-width: 140px; }
+
+/* ─── Confidence Selector ─── */
+.conf-selector { display: flex; gap: 6px; margin-bottom: 12px; }
+.conf-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); font-size: 0.8rem; }
+.conf-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .stats-bar { flex-direction: column; }
+  .header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═════════════════════════════════ HEADER ═════════════════════════════════ -->
+<div class="header">
+  <h1>Living Meta-Analysis: <span class="disease" id="diseaseTitle"></span></h1>
+  <div class="header-right">
+    <select id="configSelect" class="btn" onchange="loadConfig(this.value)"></select>
+    <button class="btn" onclick="toggleTheme()">Theme</button>
+    <button class="btn" onclick="exportCSV()">Export CSV</button>
+    <button class="btn btn-primary" id="btnAddStudy" onclick="showAddStudy()">+ Add Study</button>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════ TABS ═════════════════════════════════ -->
+<div class="tabs" id="tabs" role="tablist">
+  <button class="tab active" data-panel="overview" role="tab" aria-selected="true" tabindex="0">Overview</button>
+  <button class="tab" data-panel="forest" role="tab" aria-selected="false" tabindex="-1">Forest Plot</button>
+  <button class="tab" data-panel="funnel" role="tab" aria-selected="false" tabindex="-1">Funnel Plot</button>
+  <button class="tab" data-panel="studies" role="tab" aria-selected="false" tabindex="-1">Studies</button>
+  <button class="tab" data-panel="rob" role="tab" aria-selected="false" tabindex="-1">Risk of Bias</button>
+  <button class="tab" data-panel="sequential" role="tab" aria-selected="false" tabindex="-1">Sequential Analysis</button>
+  <button class="tab" data-panel="audit" role="tab" aria-selected="false" tabindex="-1">Audit Log</button>
+</div>
+
+<!-- ═════════════════════════════════ PANELS ═════════════════════════════════ -->
+<div class="panel-container">
+
+<!-- OVERVIEW -->
+<div class="panel active" id="panel-overview">
+  <div class="stats-bar" id="overviewStats"></div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Pooled Effect (Random-Effects)</h3>
+      <div id="overviewForest" style="height:300px;"></div>
+    </div>
+    <div class="card">
+      <h3>Cumulative Evidence Over Time</h3>
+      <div id="overviewCumulative" style="height:300px;"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Key Findings</h3>
+    <div id="keyFindings" style="font-size:0.9rem; line-height:1.8;"></div>
+  </div>
+</div>
+
+<!-- FOREST PLOT -->
+<div class="panel" id="panel-forest">
+  <div class="conf-selector" id="confSelector"></div>
+  <div class="grid2" style="margin-bottom:12px;">
+    <div>
+      <label style="font-size:0.8rem; color:var(--text2);">Estimator:</label>
+      <select id="estimatorSelect" class="btn" onchange="renderForest()">
+        <option value="DL">DerSimonian-Laird</option>
+        <option value="REML">REML</option>
+        <option value="PM">Paule-Mandel</option>
+        <option value="FE">Fixed Effect</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:0.8rem; color:var(--text2);">Sort by:</label>
+      <select id="sortSelect" class="btn" onchange="renderForest()">
+        <option value="year">Year</option>
+        <option value="effect">Effect size</option>
+        <option value="weight">Weight</option>
+      </select>
+    </div>
+  </div>
+  <div id="forestPlot" style="min-height:400px;"></div>
+  <div id="forestStats" style="margin-top:12px; font-size:0.85rem; color:var(--text2);"></div>
+</div>
+
+<!-- FUNNEL PLOT -->
+<div class="panel" id="panel-funnel">
+  <div id="funnelPlot" style="height:500px;"></div>
+  <div id="funnelStats" class="card" style="margin-top:12px;"></div>
+</div>
+
+<!-- STUDIES TABLE -->
+<div class="panel" id="panel-studies">
+  <div class="table-wrap">
+    <table id="studiesTable">
+      <thead><tr id="studiesHeader"></tr></thead>
+      <tbody id="studiesBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RISK OF BIAS -->
+<div class="panel" id="panel-rob">
+  <div class="card">
+    <h3>Risk of Bias Summary</h3>
+    <div id="robSummary" style="height:300px;"></div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <div class="table-wrap">
+      <table id="robTable">
+        <thead><tr id="robHeader"></tr></thead>
+        <tbody id="robBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SEQUENTIAL ANALYSIS (TSA/CUSUM) -->
+<div class="panel" id="panel-sequential">
+  <div class="grid2">
+    <div class="card">
+      <h3>Cumulative Z-Score (Trial Sequential Analysis)</h3>
+      <div id="tsaPlot" style="height:400px;"></div>
+    </div>
+    <div class="card">
+      <h3>CUSUM Chart</h3>
+      <div id="cusumPlot" style="height:400px;"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <h3>Sequential Analysis Summary</h3>
+    <div id="seqSummary" style="font-size:0.9rem;"></div>
+  </div>
+</div>
+
+<!-- AUDIT LOG -->
+<div class="panel" id="panel-audit">
+  <div class="card">
+    <h3>Audit Log</h3>
+    <div class="audit-log" id="auditLog"></div>
+  </div>
+</div>
+
+</div><!-- panel-container -->
+
+<!-- ═════════════════════════════════ ADD STUDY MODAL ═════════════════════════════════ -->
+<div id="addStudyModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:600px; width:90%; max-height:80vh; overflow-y:auto;">
+    <h3 id="modalTitle" style="margin-bottom:16px;">Add New Study</h3>
+    <div class="form-grid" id="addStudyForm"></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+      <button class="btn" onclick="hideAddStudy()">Cancel</button>
+      <button class="btn btn-primary" onclick="addStudy()">Add Study</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<!--                           JAVASCRIPT ENGINE                                        -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ════════════════════════ STATE ════════════════════════
+let CONFIG = null;      // Current therapy config
+let STUDIES = [];       // Study data
+let AUDIT = [];         // Audit log entries
+let confLevel = 0.95;   // Confidence level
+
+// ════════════════════════ THERAPY CONFIGURATIONS ════════════════════════
+const CONFIGS = {
+  'pfa-af': {
+    id: 'pfa-af',
+    name: 'PFA for Atrial Fibrillation',
+    shortName: 'PFA vs Thermal Ablation',
+    description: 'Pulsed Field Ablation vs Thermal/RF/Cryo for AF',
+    effectType: 'OR',       // OR, RR, RD, MD, SMD
+    effectLabel: 'Odds Ratio',
+    nullValue: 0,           // On log scale
+    scaleType: 'ratio',     // ratio or difference
+    primaryOutcome: 'Freedom from AF recurrence at 12 months',
+    robDomains: ['Randomization', 'Deviations', 'Missing', 'Measurement', 'Selection'],
+    studyFields: ['name', 'year', 'nctId', 'n_pfa', 'e_pfa', 'n_thermal', 'e_thermal'],
+    fieldLabels: { n_pfa: 'N (PFA)', e_pfa: 'Events (PFA)', n_thermal: 'N (Thermal)', e_thermal: 'Events (Thermal)' },
+    studies: [
+      // MANIFEST-PF removed: single-arm registry (no comparator), not eligible for comparative MA
+      { name: 'ADVENT', year: 2023, nctId: 'NCT04612244', n_pfa: 305, e_pfa: 225, n_thermal: 302, e_thermal: 216 },
+      { name: 'inspIRE', year: 2024, nctId: 'NCT04524364', n_pfa: 226, e_pfa: 181, n_thermal: 220, e_thermal: 167 },
+      { name: 'PULSE-EU', year: 2024, nctId: 'NCT05823818', n_pfa: 150, e_pfa: 119, n_thermal: 150, e_thermal: 112 },
+      { name: 'ECLIPSE-AF', year: 2025, nctId: 'NCT04523545', n_pfa: 300, e_pfa: 249, n_thermal: 300, e_thermal: 234 },
+    ],
+  },
+
+  'tricuspid-teer': {
+    id: 'tricuspid-teer',
+    name: 'Tricuspid TEER',
+    shortName: 'TEER vs Medical Therapy for TR',
+    description: 'Transcatheter Edge-to-Edge Repair for Tricuspid Regurgitation',
+    effectType: 'OR',
+    effectLabel: 'Odds Ratio',
+    nullValue: 0,
+    scaleType: 'ratio',
+    primaryOutcome: 'TR reduction >= 1 grade at 12 months',
+    robDomains: ['Randomization', 'Deviations', 'Missing', 'Measurement', 'Selection'],
+    studyFields: ['name', 'year', 'nctId', 'n_teer', 'e_teer', 'n_med', 'e_med'],
+    fieldLabels: { n_teer: 'N (TEER)', e_teer: 'Events (TEER)', n_med: 'N (Medical)', e_med: 'Events (Medical)' },
+    studies: [
+      // TRILUMINATE Pivotal (NCT03904147) is the definitive RCT (n=572 total, 1:1 randomized)
+      { name: 'TRILUMINATE Pivotal', year: 2023, nctId: 'NCT03904147', n_teer: 286, e_teer: 229, n_med: 286, e_med: 86 },
+      { name: 'CLASP II TR', year: 2023, nctId: 'NCT04097145', n_teer: 87, e_teer: 70, n_med: 87, e_med: 20 },
+    ],
+  },
+
+  'laao': {
+    id: 'laao',
+    name: 'Left Atrial Appendage Closure',
+    shortName: 'LAAO vs Anticoagulation',
+    description: 'Watchman/Amulet LAAO vs OAC for Stroke Prevention in AF',
+    effectType: 'RR',
+    effectLabel: 'Risk Ratio',
+    nullValue: 0,
+    scaleType: 'ratio',
+    primaryOutcome: 'Stroke or systemic embolism',
+    robDomains: ['Randomization', 'Deviations', 'Missing', 'Measurement', 'Selection'],
+    studyFields: ['name', 'year', 'nctId', 'n_laao', 'e_laao', 'n_oac', 'e_oac'],
+    fieldLabels: { n_laao: 'N (LAAO)', e_laao: 'Events (LAAO)', n_oac: 'N (OAC)', e_oac: 'Events (OAC)' },
+    studies: [
+      { name: 'PROTECT-AF', year: 2014, nctId: 'NCT00129545', n_laao: 463, e_laao: 15, n_oac: 244, e_oac: 10 },
+      { name: 'PREVAIL', year: 2016, nctId: 'NCT01182441', n_laao: 269, e_laao: 17, n_oac: 138, e_oac: 5 },
+      { name: 'Amulet IDE', year: 2022, nctId: 'NCT02879448', n_laao: 344, e_laao: 12, n_oac: 172, e_oac: 7 },
+      { name: 'CHAMPION-AF', year: 2024, nctId: 'NCT04394546', n_laao: 1318, e_laao: 27, n_oac: 1311, e_oac: 38 },
+      { name: 'OPTION', year: 2025, nctId: 'NCT03795298', n_laao: 1284, e_laao: 22, n_oac: 1268, e_oac: 34 },
+    ],
+  },
+};
+
+// ════════════════════════ STATISTICAL ENGINE ════════════════════════
+
+function computeEffects(studies, config) {
+  /** Compute log-scale effect sizes from raw 2x2 data. */
+  const fields = config.studyFields;
+  const n1f = fields[3], e1f = fields[4], n2f = fields[5], e2f = fields[6];
+
+  return studies.map(s => {
+    const a = s[e1f], b = s[n1f] - s[e1f];
+    const c = s[e2f], d = s[n2f] - s[e2f];
+
+    if (s[n1f] === 0 || s[n2f] === 0 || (a === 0 && c === 0) || (b === 0 && d === 0)) {
+      return { ...s, yi: null, sei: null, wi: 0 };
+    }
+
+    // Continuity correction for zero cells
+    const cc = (a === 0 || b === 0 || c === 0 || d === 0) ? 0.5 : 0;
+    const a2 = a + cc, b2 = b + cc, c2 = c + cc, d2 = d + cc;
+
+    let yi, sei;
+    if (config.effectType === 'OR') {
+      yi = Math.log((a2 * d2) / (b2 * c2));
+      sei = Math.sqrt(1/a2 + 1/b2 + 1/c2 + 1/d2);
+    } else if (config.effectType === 'RR') {
+      const n1 = a2 + b2, n2 = c2 + d2;
+      yi = Math.log(a2/n1) - Math.log(c2/n2);
+      sei = Math.sqrt(1/a2 - 1/n1 + 1/c2 - 1/n2);
+    } else {
+      // RD (with continuity correction)
+      const n1 = a2 + b2, n2 = c2 + d2;
+      yi = a2/n1 - c2/n2;
+      sei = Math.sqrt((a2*b2)/(n1*n1*n1) + (c2*d2)/(n2*n2*n2));
+    }
+
+    if (!isFinite(yi) || !isFinite(sei) || sei <= 0) {
+      return { ...s, yi: null, sei: null, wi: 0 };
+    }
+
+    return { ...s, yi, sei, vi: sei * sei };
+  }).filter(s => s.yi !== null);
+}
+
+function poolDL(studies) {
+  const k = studies.length;
+  if (k === 0) return null;
+
+  const wi = studies.map(s => 1 / s.vi);
+  const sumW = wi.reduce((a,b) => a+b, 0);
+  const thetaFE = wi.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumW;
+  const Q = wi.reduce((a, w, i) => a + w * (studies[i].yi - thetaFE) ** 2, 0);
+  const C = sumW - wi.reduce((a, w) => a + w*w, 0) / sumW;
+  const tau2 = Math.max(0, (Q - (k - 1)) / (C || 1));
+
+  const wiStar = studies.map(s => 1 / (s.vi + tau2));
+  const sumWStar = wiStar.reduce((a,b) => a+b, 0);
+  const theta = wiStar.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumWStar;
+  const se = 1 / Math.sqrt(sumWStar);
+
+  const I2 = Q > k - 1 ? Math.max(0, (Q - (k-1)) / Q * 100) : 0;
+  const H2 = Q / Math.max(1, k - 1);
+
+  return { theta, se, tau2, I2, H2, Q, k, weights: wiStar.map(w => w / sumWStar * 100) };
+}
+
+function poolREML(studies, maxIter = 100, tol = 1e-8) {
+  const dl = poolDL(studies);
+  if (!dl) return null;
+  let tau2 = dl.tau2;
+  const k = studies.length;
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    const wi = studies.map(s => 1 / (s.vi + tau2));
+    const sumW = wi.reduce((a,b) => a+b, 0);
+    const theta = wi.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumW;
+
+    // REML score: U = -0.5*sum(w) + 0.5*sum(w^2*(yi-theta)^2); Fisher info: I = 0.5*sum(w^2)
+    const num = wi.reduce((a, w, i) => a + w*w * (studies[i].yi - theta)**2, 0) - sumW;
+    const den = wi.reduce((a, w) => a + w*w, 0);
+    const delta = num / (den || 1);
+    const newTau2 = Math.max(0, tau2 + delta);
+
+    if (Math.abs(newTau2 - tau2) < tol) { tau2 = newTau2; break; }
+    tau2 = newTau2;
+  }
+
+  const wi = studies.map(s => 1 / (s.vi + tau2));
+  const sumW = wi.reduce((a,b) => a+b, 0);
+  const theta = wi.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumW;
+  const se = 1 / Math.sqrt(sumW);
+  // Q and I2 must use FE weights and FE theta (Cochran's Q definition)
+  const wiFE = studies.map(s => 1 / s.vi);
+  const sumWFE = wiFE.reduce((a,b) => a+b, 0);
+  const thetaFE = wiFE.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumWFE;
+  const Q = wiFE.reduce((a, w, i) => a + w * (studies[i].yi - thetaFE)**2, 0);
+  const I2 = Q > k-1 ? (Q - (k-1)) / Q * 100 : 0;
+
+  return { theta, se, tau2, I2, H2: Q / Math.max(1, k-1), Q, k, weights: wi.map(w => w/sumW*100) };
+}
+
+function poolPM(studies, maxIter = 100, tol = 1e-8) {
+  const k = studies.length;
+  if (k < 2) return poolDL(studies);
+  let tau2 = poolDL(studies).tau2;
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    const wi = studies.map(s => 1 / (s.vi + tau2));
+    const sumW = wi.reduce((a,b) => a+b, 0);
+    const theta = wi.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumW;
+    const Qs = wi.reduce((a, w, i) => a + w * (studies[i].yi - theta)**2, 0);
+    const sumW2 = wi.reduce((a, w) => a + w*w, 0);
+    const Cpm = sumW - sumW2 / sumW;
+    const newTau2 = Math.max(0, tau2 + (Qs - (k - 1)) / (Cpm || 1));
+    if (Math.abs(newTau2 - tau2) < tol) { tau2 = newTau2; break; }
+    tau2 = newTau2;
+  }
+
+  const wi = studies.map(s => 1 / (s.vi + tau2));
+  const sumW = wi.reduce((a,b) => a+b, 0);
+  const theta = wi.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumW;
+  const se = 1 / Math.sqrt(sumW);
+  // Q/I2 with FE theta
+  const wiFE = studies.map(s => 1 / s.vi);
+  const sumWFE = wiFE.reduce((a,b) => a+b, 0);
+  const thetaFE = wiFE.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumWFE;
+  const Q = wiFE.reduce((a, w, i) => a + w * (studies[i].yi - thetaFE)**2, 0);
+
+  return { theta, se, tau2, I2: Q > k-1 ? (Q-(k-1))/Q*100 : 0, Q, k, weights: wi.map(w => w/sumW*100) };
+}
+
+function poolFE(studies) {
+  const k = studies.length;
+  if (k === 0) return null;
+  const wi = studies.map(s => 1 / s.vi);
+  const sumW = wi.reduce((a,b) => a+b, 0);
+  const theta = wi.reduce((a, w, i) => a + w * studies[i].yi, 0) / sumW;
+  const se = 1 / Math.sqrt(sumW);
+  const Q = wi.reduce((a, w, i) => a + w * (studies[i].yi - theta)**2, 0);
+  return { theta, se, tau2: 0, I2: Q > k-1 ? (Q-(k-1))/Q*100 : 0, Q, k, weights: wi.map(w => w/sumW*100) };
+}
+
+function pool(studies, method = 'DL') {
+  if (studies.length === 0) return null;
+  switch (method) {
+    case 'REML': return poolREML(studies);
+    case 'PM': return poolPM(studies);
+    case 'FE': return poolFE(studies);
+    default: return poolDL(studies);
+  }
+}
+
+function predictionInterval(result, confLevel = 0.95) {
+  if (!result || result.k < 3) return null;
+  const alpha = 1 - confLevel;
+  const tCrit = jStat_tInv(1 - alpha/2, result.k - 2);
+  const piSE = Math.sqrt(result.tau2 + result.se ** 2);
+  return { lo: result.theta - tCrit * piSE, hi: result.theta + tCrit * piSE };
+}
+
+function eggerTest(studies) {
+  if (studies.length < 3) return null;
+  const n = studies.length;
+  const x = studies.map(s => 1 / s.sei);
+  const y = studies.map(s => s.yi / s.sei);
+  const xm = x.reduce((a,b) => a+b, 0) / n;
+  const ym = y.reduce((a,b) => a+b, 0) / n;
+  const ssxx = x.reduce((a,v) => a + (v-xm)**2, 0);
+  const ssxy = x.reduce((a,v,i) => a + (v-xm)*(y[i]-ym), 0);
+  const b = ssxy / ssxx;
+  const a0 = ym - b * xm;
+  const residuals = y.map((v,i) => v - a0 - b * x[i]);
+  const sse = residuals.reduce((a,r) => a + r*r, 0);
+  const mse = sse / (n - 2);
+  const seA = Math.sqrt(mse * (1/n + xm*xm/ssxx));
+  const t = a0 / seA;
+  const p = 2 * (1 - jStat_tCDF(Math.abs(t), n - 2));
+  return { intercept: a0, t, p, se: seA };
+}
+
+// ═══════ Minimal t-distribution (no external library) ═══════
+function jStat_tCDF(x, df) {
+  if (df <= 0) return 0.5;
+  const t2 = x * x;
+  const a = df / 2, b = 0.5;
+  const z = df / (df + t2);
+  const ib = incompleteBeta(z, a, b);
+  return x >= 0 ? 1 - 0.5 * ib : 0.5 * ib;
+}
+function jStat_tInv(p, df) {
+  // Newton's method on tCDF
+  let x = p > 0.5 ? 2 : -2;
+  for (let i = 0; i < 50; i++) {
+    const fx = jStat_tCDF(x, df) - p;
+    const dx = tPDF(x, df);
+    if (Math.abs(dx) < 1e-15) break;
+    x -= fx / dx;
+    if (Math.abs(fx) < 1e-12) break;
+  }
+  return x;
+}
+function tPDF(x, df) {
+  const c = Math.exp(lnGamma((df+1)/2) - lnGamma(df/2)) / Math.sqrt(df * Math.PI);
+  return c * Math.pow(1 + x*x/df, -(df+1)/2);
+}
+function lnGamma(x) {
+  const c = [76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  let y = x, tmp = x + 5.5; tmp -= (x + 0.5) * Math.log(tmp);
+  let ser = 1.000000000190015;
+  for (let j = 0; j < 6; j++) ser += c[j] / ++y;
+  return -tmp + Math.log(2.5066282746310005 * ser / x);
+}
+function incompleteBeta(x, a, b) {
+  if (x <= 0) return 0; if (x >= 1) return 1;
+  const bt = Math.exp(lnGamma(a+b) - lnGamma(a) - lnGamma(b) + a*Math.log(x) + b*Math.log(1-x));
+  if (x < (a+1)/(a+b+2)) return bt * betaCF(x, a, b) / a;
+  return 1 - bt * betaCF(1-x, b, a) / b;
+}
+function betaCF(x, a, b) {
+  const maxIter = 200; let qab = a+b, qap = a+1, qam = a-1;
+  let c = 1, d = 1 - qab * x / qap; if (Math.abs(d) < 1e-30) d = 1e-30; d = 1/d; let h = d;
+  for (let m = 1; m <= maxIter; m++) {
+    let m2 = 2*m;
+    let aa = m * (b-m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30; c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+    d = 1/d; h *= d * c;
+    aa = -(a+m) * (qab+m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30; c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+    d = 1/d; const del = d * c; h *= del;
+    if (Math.abs(del - 1) < 3e-7) break;
+  }
+  return h;
+}
+function normalCDF(x) { return 0.5 * (1 + erf(x / Math.sqrt(2))); }
+function erf(x) {
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const sign = x < 0 ? -1 : 1; x = Math.abs(x);
+  const t = 1/(1+p*x);
+  return sign*(1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x));
+}
+
+// ════════════════════════ RENDERING ════════════════════════
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(str ?? '')));
+  return d.innerHTML;
+}
+function csvSafe(val) {
+  const s = String(val ?? '');
+  if (/^[=+@\t\r]/.test(s)) return "'" + s;
+  if (/[,"\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function getCSSVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function plotlyLayout(extra) {
+  return Object.assign({
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { color: getCSSVar('--text'), size: 11 },
+    margin: { t: 10, b: 40, l: 60, r: 20 },
+  }, extra);
+}
+
+function renderOverview() {
+  const data = computeEffects(STUDIES, CONFIG);
+  const result = pool(data, 'DL');
+  if (!result) { document.getElementById('overviewStats').innerHTML = '<p>No valid studies.</p>'; return; }
+
+  const pi = predictionInterval(result, confLevel);
+  const alpha = 1 - confLevel;
+  const zCrit = -jStat_tInv(alpha/2, 1e6);
+  const ciLo = result.theta - zCrit * result.se;
+  const ciHi = result.theta + zCrit * result.se;
+  const pVal = 2 * (1 - normalCDF(Math.abs(result.theta / result.se)));
+  const sig = (ciLo > 0 || ciHi < 0);
+
+  const expTheta = CONFIG.scaleType === 'ratio' ? Math.exp(result.theta).toFixed(2) : result.theta.toFixed(2);
+  const expCI = CONFIG.scaleType === 'ratio'
+    ? `[${Math.exp(ciLo).toFixed(2)}, ${Math.exp(ciHi).toFixed(2)}]`
+    : `[${ciLo.toFixed(2)}, ${ciHi.toFixed(2)}]`;
+
+  document.getElementById('overviewStats').innerHTML = `
+    <div class="stat-card accent"><div class="num">${result.k}</div><div class="label">Studies</div></div>
+    <div class="stat-card ${sig ? 'green' : 'orange'}"><div class="num">${expTheta}</div><div class="label">${CONFIG.effectLabel} ${expCI}</div></div>
+    <div class="stat-card"><div class="num">${result.I2.toFixed(1)}%</div><div class="label">I-squared</div></div>
+    <div class="stat-card"><div class="num">${pVal < 0.001 ? '<0.001' : pVal.toFixed(3)}</div><div class="label">p-value</div></div>
+    <div class="stat-card ${sig ? 'green' : 'red'}"><div class="num">${sig ? 'Significant' : 'NS'}</div><div class="label">at ${(confLevel*100).toFixed(0)}% CI</div></div>
+  `;
+
+  // Key findings
+  const findings = [];
+  findings.push(`Pooled ${CONFIG.effectLabel}: <strong>${expTheta}</strong> (${(confLevel*100).toFixed(0)}% CI ${expCI})`);
+  findings.push(`Heterogeneity: I&sup2; = ${result.I2.toFixed(1)}%, &tau;&sup2; = ${result.tau2.toFixed(4)}`);
+  if (pi) {
+    const piStr = CONFIG.scaleType === 'ratio'
+      ? `[${Math.exp(pi.lo).toFixed(2)}, ${Math.exp(pi.hi).toFixed(2)}]`
+      : `[${pi.lo.toFixed(2)}, ${pi.hi.toFixed(2)}]`;
+    findings.push(`Prediction interval: ${piStr}`);
+  }
+  const eg = eggerTest(data);
+  if (eg) {
+    const egWarn = data.length < 10 ? ' (caution: k<10, test has low power)' : '';
+    findings.push(`Egger's test for publication bias: intercept = ${eg.intercept.toFixed(2)}, p = ${eg.p.toFixed(3)}${egWarn}`);
+  }
+  findings.push(`Last updated: ${new Date().toLocaleDateString()}`);
+  document.getElementById('keyFindings').innerHTML = findings.map(f => `<p>${f}</p>`).join('');
+}
+
+function renderForest() {
+  const data = computeEffects(STUDIES, CONFIG);
+  const method = document.getElementById('estimatorSelect').value;
+  const sortBy = document.getElementById('sortSelect').value;
+
+  if (sortBy === 'year') data.sort((a,b) => a.year - b.year);
+  else if (sortBy === 'effect') data.sort((a,b) => a.yi - b.yi);
+
+  const result = pool(data, method);
+  if (!result) return;
+
+  const alpha = 1 - confLevel;
+  const zCrit = -jStat_tInv(alpha/2, 1e6);
+
+  const sorted = [...data];
+  if (sortBy === 'weight') sorted.sort((a,b) => (1/a.vi) - (1/b.vi));
+
+  const labels = sorted.map(s => `${s.name} (${s.year})`);
+  const effects = sorted.map(s => CONFIG.scaleType === 'ratio' ? Math.exp(s.yi) : s.yi);
+  const ciLo = sorted.map(s => CONFIG.scaleType === 'ratio' ? Math.exp(s.yi - zCrit * s.sei) : s.yi - zCrit * s.sei);
+  const ciHi = sorted.map(s => CONFIG.scaleType === 'ratio' ? Math.exp(s.yi + zCrit * s.sei) : s.yi + zCrit * s.sei);
+
+  // Add pooled
+  const poolTheta = CONFIG.scaleType === 'ratio' ? Math.exp(result.theta) : result.theta;
+  const poolLo = CONFIG.scaleType === 'ratio' ? Math.exp(result.theta - zCrit * result.se) : result.theta - zCrit * result.se;
+  const poolHi = CONFIG.scaleType === 'ratio' ? Math.exp(result.theta + zCrit * result.se) : result.theta + zCrit * result.se;
+
+  labels.push(''); labels.push(`Pooled (${method})`);
+  effects.push(null); effects.push(poolTheta);
+  ciLo.push(null); ciLo.push(poolLo);
+  ciHi.push(null); ciHi.push(poolHi);
+
+  const trace = {
+    x: effects, y: labels, mode: 'markers',
+    error_x: { type: 'data', symmetric: false, array: effects.map((e,i) => ciHi[i] !== null ? ciHi[i] - e : 0), arrayminus: effects.map((e,i) => ciLo[i] !== null ? e - ciLo[i] : 0), thickness: 2, width: 0, color: getCSSVar('--accent') },
+    marker: { color: labels.map((l,i) => i === labels.length - 1 ? getCSSVar('--red') : getCSSVar('--accent')), size: labels.map((l,i) => i === labels.length - 1 ? 12 : 8), symbol: labels.map((l,i) => i === labels.length - 1 ? 'diamond' : 'circle') },
+    hoverinfo: 'text',
+    text: effects.map((e,i) => e !== null ? `${labels[i]}: ${e.toFixed(2)} [${ciLo[i].toFixed(2)}, ${ciHi[i].toFixed(2)}]` : ''),
+  };
+
+  const nullLine = CONFIG.scaleType === 'ratio' ? 1 : 0;
+  Plotly.newPlot('forestPlot', [trace], plotlyLayout({
+    height: Math.max(300, labels.length * 28 + 60),
+    xaxis: { title: CONFIG.effectLabel, zeroline: false, gridcolor: getCSSVar('--border'),
+             shapes: [{ type: 'line', x0: nullLine, x1: nullLine, y0: 0, y1: 1, yref: 'paper', line: { color: getCSSVar('--red'), dash: 'dash', width: 1 } }] },
+    yaxis: { automargin: true },
+    shapes: [{ type: 'line', x0: nullLine, x1: nullLine, y0: 0, y1: 1, yref: 'paper', line: { color: getCSSVar('--red'), dash: 'dash', width: 1.5 } }],
+  }), { responsive: true });
+
+  document.getElementById('forestStats').innerHTML = `
+    ${method}: ${CONFIG.effectLabel} = ${poolTheta.toFixed(2)} [${poolLo.toFixed(2)}, ${poolHi.toFixed(2)}] |
+    I&sup2; = ${result.I2.toFixed(1)}% | &tau;&sup2; = ${result.tau2.toFixed(4)} | Q = ${result.Q.toFixed(1)} (df=${result.k-1})
+  `;
+}
+
+function renderFunnel() {
+  const data = computeEffects(STUDIES, CONFIG);
+  const result = pool(data, 'DL');
+  if (!result) return;
+
+  const x = data.map(s => CONFIG.scaleType === 'ratio' ? Math.exp(s.yi) : s.yi);
+  const y = data.map(s => s.sei);
+  const pooled = CONFIG.scaleType === 'ratio' ? Math.exp(result.theta) : result.theta;
+
+  Plotly.newPlot('funnelPlot', [{
+    x, y, mode: 'markers',
+    marker: { color: getCSSVar('--accent'), size: 8 },
+    text: data.map(s => s.name), hoverinfo: 'text+x+y',
+  }], plotlyLayout({
+    xaxis: { title: CONFIG.effectLabel, gridcolor: getCSSVar('--border') },
+    yaxis: { title: 'Standard Error', autorange: 'reversed', gridcolor: getCSSVar('--border') },
+    shapes: [{ type: 'line', x0: pooled, x1: pooled, y0: 0, y1: Math.max(...y) * 1.1, line: { color: getCSSVar('--red'), dash: 'dash' } }],
+  }), { responsive: true });
+
+  const eg = eggerTest(data);
+  document.getElementById('funnelStats').innerHTML = eg
+    ? `<h3>Egger's Test</h3><p>Intercept: ${eg.intercept.toFixed(3)} (SE ${eg.se.toFixed(3)}), t = ${eg.t.toFixed(2)}, p = ${eg.p.toFixed(3)} &mdash; ${eg.p < 0.1 ? '<span style="color:var(--red)">Possible asymmetry</span>' : '<span style="color:var(--green)">No evidence of asymmetry</span>'}</p>`
+    : '<h3>Insufficient studies for Egger\'s test</h3>';
+}
+
+function renderStudiesTable() {
+  const fields = CONFIG.studyFields;
+  const labels = CONFIG.fieldLabels || {};
+  const hdr = fields.map(f => `<th>${labels[f] || f}</th>`).join('');
+  document.getElementById('studiesHeader').innerHTML = hdr + '<th>Effect</th><th>95% CI</th>';
+
+  const data = computeEffects(STUDIES, CONFIG);
+  const alpha = 1 - confLevel;
+  const zCritTable = -jStat_tInv(alpha/2, 1e6);
+  document.getElementById('studiesBody').innerHTML = data.map(s => {
+    const eff = CONFIG.scaleType === 'ratio' ? Math.exp(s.yi).toFixed(2) : s.yi.toFixed(2);
+    const lo = CONFIG.scaleType === 'ratio' ? Math.exp(s.yi - zCritTable * s.sei).toFixed(2) : (s.yi - zCritTable * s.sei).toFixed(2);
+    const hi = CONFIG.scaleType === 'ratio' ? Math.exp(s.yi + zCritTable * s.sei).toFixed(2) : (s.yi + zCritTable * s.sei).toFixed(2);
+    const cells = fields.map(f => `<td>${escapeHtml(s[f])}</td>`).join('');
+    return `<tr>${cells}<td>${eff}</td><td>[${lo}, ${hi}]</td></tr>`;
+  }).join('');
+}
+
+function renderRoB() {
+  const domains = CONFIG.robDomains || [];
+  document.getElementById('robHeader').innerHTML = '<th>Study</th>' + domains.map(d => `<th>${d}</th>`).join('');
+
+  document.getElementById('robBody').innerHTML = STUDIES.map(s => {
+    const cells = domains.map(d => {
+      const level = (s.rob && s.rob[d]) || 'low';
+      return `<td><span class="rob-dot rob-${level}" title="${level}"></span></td>`;
+    }).join('');
+    return `<tr><td>${escapeHtml(s.name)} (${s.year})</td>${cells}</tr>`;
+  }).join('');
+
+  // Summary chart
+  const counts = domains.map(d => {
+    const low = STUDIES.filter(s => !s.rob || !s.rob[d] || s.rob[d] === 'low').length;
+    const some = STUDIES.filter(s => s.rob && s.rob[d] === 'some').length;
+    const high = STUDIES.filter(s => s.rob && s.rob[d] === 'high').length;
+    return { domain: d, low, some, high };
+  });
+
+  Plotly.newPlot('robSummary', [
+    { y: domains, x: counts.map(c => c.low), type: 'bar', orientation: 'h', name: 'Low', marker: { color: getCSSVar('--green') } },
+    { y: domains, x: counts.map(c => c.some), type: 'bar', orientation: 'h', name: 'Some concerns', marker: { color: getCSSVar('--yellow') } },
+    { y: domains, x: counts.map(c => c.high), type: 'bar', orientation: 'h', name: 'High', marker: { color: getCSSVar('--red') } },
+  ], plotlyLayout({ barmode: 'stack', height: 250, yaxis: { automargin: true }, legend: { orientation: 'h', y: -0.2 } }), { responsive: true });
+}
+
+function renderSequential() {
+  const data = computeEffects(STUDIES, CONFIG).sort((a,b) => a.year - b.year);
+  if (data.length < 2) return;
+
+  // Cumulative Z-score
+  const cumZ = [], cumLabels = [];
+  for (let i = 1; i <= data.length; i++) {
+    const subset = data.slice(0, i);
+    const r = pool(subset, 'DL');
+    if (r) {
+      cumZ.push(r.theta / r.se);
+      cumLabels.push(`${data[i-1].name} (${data[i-1].year})`);
+    }
+  }
+
+  // O'Brien-Fleming boundary: decreases per look as z_alpha * sqrt(K/j)
+  const K = data.length;
+  const obfUpper = cumLabels.map((_, j) => 1.96 * Math.sqrt(K / (j + 1)));
+  const obfLower = obfUpper.map(b => -b);
+  const finalBoundary = obfUpper[obfUpper.length - 1];
+
+  Plotly.newPlot('tsaPlot', [
+    { x: cumLabels, y: cumZ, mode: 'lines+markers', name: 'Cumulative Z', line: { color: getCSSVar('--accent') }, marker: { size: 6 } },
+    { x: cumLabels, y: obfUpper, mode: 'lines', name: "O'Brien-Fleming", line: { color: getCSSVar('--red'), dash: 'dash' } },
+    { x: cumLabels, y: obfLower, mode: 'lines', showlegend: false, line: { color: getCSSVar('--red'), dash: 'dash' } },
+  ], plotlyLayout({
+    xaxis: { tickangle: -45 }, yaxis: { title: 'Cumulative Z-score', gridcolor: getCSSVar('--border') },
+    legend: { x: 0, y: 1.1, orientation: 'h' },
+  }), { responsive: true });
+
+  // CUSUM
+  const cumMean = data.reduce((a,s) => a + s.yi, 0) / data.length;
+  const cusum = [];
+  let cumSum = 0;
+  data.forEach(s => { cumSum += s.yi - cumMean; cusum.push(cumSum); });
+
+  Plotly.newPlot('cusumPlot', [{
+    x: data.map(s => `${s.name} (${s.year})`), y: cusum, mode: 'lines+markers',
+    line: { color: getCSSVar('--accent2') }, marker: { size: 6 },
+  }], plotlyLayout({
+    xaxis: { tickangle: -45 }, yaxis: { title: 'CUSUM', gridcolor: getCSSVar('--border') },
+    shapes: [{ type: 'line', x0: 0, x1: data.length - 1, y0: 0, y1: 0, line: { color: getCSSVar('--border'), dash: 'dot' } }],
+  }), { responsive: true });
+
+  const crossed = Math.abs(cumZ[cumZ.length-1]) > finalBoundary;
+  document.getElementById('seqSummary').innerHTML = `
+    <p>Current cumulative Z-score: <strong>${cumZ[cumZ.length-1].toFixed(2)}</strong></p>
+    <p>O'Brien-Fleming boundary at final look: &plusmn;${finalBoundary.toFixed(2)}</p>
+    <p>Boundary crossed: <strong style="color:${crossed ? 'var(--green)' : 'var(--orange)'}">${crossed ? 'Yes — evidence conclusive' : 'No — continue monitoring'}</strong></p>
+  `;
+}
+
+function renderAudit() {
+  document.getElementById('auditLog').innerHTML = AUDIT.map(e =>
+    `<div class="audit-entry"><span class="audit-time">${e.time}</span><span>${e.msg}</span></div>`
+  ).join('');
+}
+
+// ════════════════════════ UI LOGIC ════════════════════════
+
+function loadConfig(id) {
+  CONFIG = CONFIGS[id];
+  if (!CONFIG) return;
+  STUDIES = JSON.parse(JSON.stringify(CONFIG.studies));
+  document.getElementById('diseaseTitle').textContent = CONFIG.shortName;
+  document.title = `Living MA: ${CONFIG.name}`;
+  addAudit(`Loaded config: ${CONFIG.name} (${CONFIG.studies.length} studies)`);
+  renderAll();
+}
+
+function renderAll() {
+  const active = document.querySelector('.tab.active');
+  const panel = active ? active.dataset.panel : 'overview';
+  // Always render overview; only render active panel to avoid wasteful hidden renders
+  renderOverview();
+  if (panel === 'forest') renderForest();
+  else if (panel === 'funnel') renderFunnel();
+  else if (panel === 'studies') renderStudiesTable();
+  else if (panel === 'rob') renderRoB();
+  else if (panel === 'sequential') renderSequential();
+  else if (panel === 'audit') renderAudit();
+}
+
+// Tab navigation (keyboard accessible)
+function activateTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); t.tabIndex = -1; });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  tab.classList.add('active');
+  tab.setAttribute('aria-selected', 'true');
+  tab.tabIndex = 0;
+  tab.focus();
+  document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+  renderAll();
+}
+document.getElementById('tabs').addEventListener('click', function(e) {
+  if (!e.target.classList.contains('tab')) return;
+  activateTab(e.target);
+});
+document.getElementById('tabs').addEventListener('keydown', function(e) {
+  const tabs = [...document.querySelectorAll('.tab')];
+  const idx = tabs.indexOf(document.activeElement);
+  if (idx === -1) return;
+  let next = -1;
+  if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+  else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+  else if (e.key === 'Home') next = 0;
+  else if (e.key === 'End') next = tabs.length - 1;
+  if (next >= 0) { e.preventDefault(); activateTab(tabs[next]); }
+});
+
+// Confidence level
+function initConfSelector() {
+  const el = document.getElementById('confSelector');
+  [0.90, 0.95, 0.99].forEach(cl => {
+    const btn = document.createElement('button');
+    btn.className = 'conf-btn' + (cl === confLevel ? ' active' : '');
+    btn.textContent = (cl*100) + '%';
+    btn.onclick = () => { confLevel = cl; document.querySelectorAll('.conf-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderAll(); };
+    el.appendChild(btn);
+  });
+}
+
+// Theme
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('living-meta-theme', next); } catch(e) {}
+  renderAll();
+}
+
+// Add study modal (accessible: focus trap + Escape)
+let _modalEscHandler = null;
+function showAddStudy() {
+  const form = document.getElementById('addStudyForm');
+  form.innerHTML = CONFIG.studyFields.map(f => `
+    <div class="form-group">
+      <label for="new-${f}">${escapeHtml(CONFIG.fieldLabels[f] || f)}</label>
+      <input id="new-${f}" type="${f === 'name' || f === 'nctId' ? 'text' : 'number'}" />
+    </div>
+  `).join('');
+  document.getElementById('addStudyModal').style.display = 'flex';
+  // Focus first input
+  const firstInput = form.querySelector('input');
+  if (firstInput) setTimeout(() => firstInput.focus(), 50);
+  // Escape to close
+  _modalEscHandler = function(e) { if (e.key === 'Escape') hideAddStudy(); };
+  document.addEventListener('keydown', _modalEscHandler);
+}
+function hideAddStudy() {
+  document.getElementById('addStudyModal').style.display = 'none';
+  if (_modalEscHandler) { document.removeEventListener('keydown', _modalEscHandler); _modalEscHandler = null; }
+  document.getElementById('btnAddStudy').focus();
+}
+function addStudy() {
+  const study = {};
+  CONFIG.studyFields.forEach(f => {
+    const el = document.getElementById('new-' + f);
+    study[f] = el.type === 'number' ? parseFloat(el.value) || 0 : el.value;
+  });
+  STUDIES.push(study);
+  hideAddStudy();
+  addAudit(`Added study: ${escapeHtml(study.name || 'Unnamed')}`);
+  renderAll();
+}
+
+function addAudit(msg) {
+  AUDIT.unshift({ time: new Date().toISOString().slice(0, 19).replace('T', ' '), msg });
+}
+
+function exportCSV() {
+  const data = computeEffects(STUDIES, CONFIG);
+  const fields = [...CONFIG.studyFields, 'yi', 'sei'];
+  let csv = fields.join(',') + '\n';
+  data.forEach(s => { csv += fields.map(f => csvSafe(s[f])).join(',') + '\n'; });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `living-meta-${CONFIG.id}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ════════════════════════ INIT ════════════════════════
+(function init() {
+  // Populate config selector
+  const sel = document.getElementById('configSelect');
+  Object.entries(CONFIGS).forEach(([id, cfg]) => {
+    const opt = document.createElement('option');
+    opt.value = id; opt.textContent = cfg.name;
+    sel.appendChild(opt);
+  });
+
+  // Restore theme
+  try {
+    const t = localStorage.getItem('living-meta-theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  } catch(e) {}
+
+  initConfSelector();
+  loadConfig(Object.keys(CONFIGS)[0]);
+})();
+</script>
+</body>
+</html>

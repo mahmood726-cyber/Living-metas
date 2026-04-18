@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoGRADE v1.0 — Automated GRADE Certainty Assessment</title>
+<style>
+  :root {
+    --bg: #ffffff; --bg2: #f8fafc; --bg3: #f1f5f9; --card: #ffffff;
+    --text: #0f172a; --text2: #475569; --muted: #64748b;
+    --border: #e2e8f0; --accent: #2563eb; --accent-light: #dbeafe;
+    --success: #16a34a; --success-bg: #dcfce7;
+    --warning: #d97706; --warning-bg: #fef3c7;
+    --danger: #dc2626; --danger-bg: #fee2e2;
+    --radius: 8px;
+  }
+  body.dark {
+    --bg: #0f172a; --bg2: #1e293b; --bg3: #334155; --card: #1e293b;
+    --text: #f1f5f9; --text2: #cbd5e1; --muted: #94a3b8;
+    --border: #334155; --accent: #3b82f6; --accent-light: #1e3a5f;
+    --success: #22c55e; --success-bg: #14532d;
+    --warning: #f59e0b; --warning-bg: #451a03;
+    --danger: #ef4444; --danger-bg: #450a0a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  .header { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 1.3rem; font-weight: 700; }
+  .header h1 span { font-size: 0.75rem; font-weight: 400; opacity: 0.8; margin-left: 8px; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: var(--accent); }
+
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .form-group { flex: 1; min-width: 120px; }
+  .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text2); margin-bottom: 3px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; background: var(--bg); color: var(--text); }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+  .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { background: var(--bg2); }
+  .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+  .badge-green { background: var(--success-bg); color: var(--success); }
+  .badge-amber { background: var(--warning-bg); color: var(--warning); }
+  .badge-red { background: var(--danger-bg); color: var(--danger); }
+
+  .domain-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; }
+  .domain-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .domain-name { font-weight: 700; font-size: 0.9rem; }
+  .domain-light { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+  .light-green { background: var(--success); }
+  .light-amber { background: var(--warning); }
+  .light-red { background: var(--danger); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { background: var(--bg2); text-align: left; padding: 8px; font-weight: 600; border-bottom: 2px solid var(--border); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+
+  .certainty-bar { display: flex; gap: 4px; align-items: center; font-size: 1.2rem; letter-spacing: 3px; }
+  .cert-high { color: var(--success); }
+  .cert-mod { color: var(--warning); }
+  .cert-low { color: var(--danger); }
+  .cert-vlow { color: var(--danger); }
+
+  .traffic-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+  .traffic-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
+
+  .paste-box { width: 100%; min-height: 80px; font-family: monospace; font-size: 0.78rem; padding: 8px; border: 1px dashed var(--border); border-radius: 6px; background: var(--bg2); color: var(--text); resize: vertical; }
+
+  .outcome-tab { display: inline-block; padding: 6px 14px; cursor: pointer; border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; font-size: 0.82rem; font-weight: 600; background: var(--bg2); }
+  .outcome-tab.active { background: var(--card); border-bottom: 1px solid var(--card); color: var(--accent); }
+
+  .sof-table th { text-align: center; font-size: 0.75rem; }
+  .sof-table td { text-align: center; }
+  .sof-table td:first-child { text-align: left; font-weight: 600; }
+
+  .footnotes { font-size: 0.75rem; color: var(--muted); margin-top: 8px; }
+  .footnotes sup { color: var(--accent); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.01ms !important; } }
+  @media (max-width: 768px) { .form-row { flex-direction: column; } .container { padding: 12px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AutoGRADE<span>v1.0 — Automated GRADE Certainty Assessment</span></h1>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,0.3);" onclick="document.body.classList.toggle('dark')">Dark Mode</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══ INPUT SECTION ═══ -->
+<div class="card">
+  <div class="card-title">1. Input Meta-Analysis Results</div>
+
+  <div style="margin-bottom:12px;">
+    <label style="font-size:0.78rem;font-weight:600;color:var(--text2);">Paste metafor/RevMan output or abstract text:</label>
+    <textarea class="paste-box" id="pasteBox" placeholder="Paste metafor summary(), RevMan XML, or text like 'HR 0.77 (95% CI 0.61-0.96, I²=58%, k=5, N=21268)' here..." oninput="parsePasteBox()"></textarea>
+  </div>
+
+  <div id="outcomeTabs" style="margin-bottom:-1px;">
+    <span class="outcome-tab active" onclick="switchOutcome(0)">Outcome 1</span>
+    <button class="btn btn-sm btn-outline" style="margin-left:8px;" onclick="addOutcome()">+ Add Outcome</button>
+  </div>
+
+  <div id="outcomeForm" style="border:1px solid var(--border);border-radius:0 var(--radius) var(--radius) var(--radius);padding:16px;">
+    <div class="form-row">
+      <div class="form-group" style="flex:2;"><label for="ocName">Outcome Name</label><input id="ocName" placeholder="e.g., MACE (composite)" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocMeasure">Effect Measure</label>
+        <select id="ocMeasure" onchange="saveOutcome()"><option value="OR">OR</option><option value="HR" selected>HR</option><option value="RR">RR</option><option value="MD">MD</option><option value="SMD">SMD</option></select>
+      </div>
+      <div class="form-group"><label for="ocDesign">Study Design</label>
+        <select id="ocDesign" onchange="saveOutcome()"><option value="RCT" selected>RCT (start HIGH)</option><option value="OBS">Observational (start LOW)</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label for="ocEstimate">Pooled Estimate</label><input id="ocEstimate" type="number" step="0.01" placeholder="0.77" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocCiLo">CI Lower</label><input id="ocCiLo" type="number" step="0.01" placeholder="0.61" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocCiHi">CI Upper</label><input id="ocCiHi" type="number" step="0.01" placeholder="0.96" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocPval">p-value</label><input id="ocPval" type="number" step="0.001" placeholder="0.02" oninput="saveOutcome()"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label for="ocI2">I² (%)</label><input id="ocI2" type="number" step="0.1" placeholder="58.6" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocQ">Cochran's Q</label><input id="ocQ" type="number" step="0.01" placeholder="9.67" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocQp">Q p-value</label><input id="ocQp" type="number" step="0.001" placeholder="0.046" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocTau2">τ²</label><input id="ocTau2" type="number" step="0.0001" placeholder="0.019" oninput="saveOutcome()"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label for="ocK">No. of Studies (k)</label><input id="ocK" type="number" placeholder="5" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocN">Total Participants</label><input id="ocN" type="number" placeholder="21268" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocCER">Control Event Rate (%)</label><input id="ocCER" type="number" step="0.1" placeholder="8.5" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocPiLo">PI Lower</label><input id="ocPiLo" type="number" step="0.01" placeholder="0.45" oninput="saveOutcome()"></div>
+      <div class="form-group"><label for="ocPiHi">PI Upper</label><input id="ocPiHi" type="number" step="0.01" placeholder="1.40" oninput="saveOutcome()"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ GRADE ASSESSMENT ═══ -->
+<div class="card">
+  <div class="card-title">2. GRADE Domain Assessment</div>
+  <div id="gradeDomainsArea">
+    <p style="color:var(--muted);font-size:0.85rem;">Enter meta-analysis data above, then assess each domain below.</p>
+  </div>
+  <div style="margin-top:12px;">
+    <button class="btn btn-primary" onclick="runAssessment()">Assess GRADE Certainty</button>
+  </div>
+</div>
+
+<!-- ═══ RESULTS ═══ -->
+<div class="card" id="resultsCard" style="display:none;">
+  <div class="card-title">3. GRADE Results</div>
+  <div id="resultsArea"></div>
+</div>
+
+<!-- ═══ EXPORT ═══ -->
+<div class="card" id="exportCard" style="display:none;">
+  <div class="card-title">4. Export</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="copySoF()">Copy SoF Table (HTML)</button>
+    <button class="btn btn-outline" onclick="copyEP()">Copy Evidence Profile</button>
+    <button class="btn btn-outline" onclick="copyManuscript()">Copy for Manuscript</button>
+    <button class="btn btn-outline" onclick="downloadCSV()">Download CSV</button>
+  </div>
+  <div id="manuscriptArea" style="margin-top:12px;display:none;"></div>
+</div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   AutoGRADE v1.0 — Core Engine
+   ═══════════════════════════════════════════════════════════════ */
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── State ── */
+let outcomes = [{ name: '', measure: 'HR', design: 'RCT', estimate: null, ciLo: null, ciHi: null, pval: null, I2: null, Q: null, Qp: null, tau2: null, k: null, N: null, cer: null, piLo: null, piHi: null, grade: null }];
+let activeOutcome = 0;
+
+function saveOutcome() {
+  const o = outcomes[activeOutcome];
+  o.name = document.getElementById('ocName').value;
+  o.measure = document.getElementById('ocMeasure').value;
+  o.design = document.getElementById('ocDesign').value;
+  o.estimate = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocEstimate').value);
+  o.ciLo = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocCiLo').value);
+  o.ciHi = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocCiHi').value);
+  o.pval = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocPval').value);
+  o.I2 = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocI2').value);
+  o.Q = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocQ').value);
+  o.Qp = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocQp').value);
+  o.tau2 = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocTau2').value);
+  o.k = parseInt(document.getElementById('ocK').value) || null;
+  o.N = parseInt(document.getElementById('ocN').value) || null;
+  o.cer = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocCER').value);
+  o.piLo = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocPiLo').value);
+  o.piHi = (function(v){var p=parseFloat(v);return isFinite(p)?p:null;})(document.getElementById('ocPiHi').value);
+  renderGradeDomains();
+}
+
+function loadOutcome(idx) {
+  const o = outcomes[idx];
+  document.getElementById('ocName').value = o.name ?? '';
+  document.getElementById('ocMeasure').value = o.measure ?? 'HR';
+  document.getElementById('ocDesign').value = o.design ?? 'RCT';
+  document.getElementById('ocEstimate').value = o.estimate ?? '';
+  document.getElementById('ocCiLo').value = o.ciLo ?? '';
+  document.getElementById('ocCiHi').value = o.ciHi ?? '';
+  document.getElementById('ocPval').value = o.pval ?? '';
+  document.getElementById('ocI2').value = o.I2 ?? '';
+  document.getElementById('ocQ').value = o.Q ?? '';
+  document.getElementById('ocQp').value = o.Qp ?? '';
+  document.getElementById('ocTau2').value = o.tau2 ?? '';
+  document.getElementById('ocK').value = o.k ?? '';
+  document.getElementById('ocN').value = o.N ?? '';
+  document.getElementById('ocCER').value = o.cer ?? '';
+  document.getElementById('ocPiLo').value = o.piLo ?? '';
+  document.getElementById('ocPiHi').value = o.piHi ?? '';
+}
+
+function switchOutcome(idx) {
+  activeOutcome = idx;
+  loadOutcome(idx);
+  document.querySelectorAll('.outcome-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  renderGradeDomains();
+}
+
+function addOutcome() {
+  if (outcomes.length >= 7) return;
+  outcomes.push({ name: '', measure: 'HR', design: 'RCT', estimate: null, ciLo: null, ciHi: null, pval: null, I2: null, Q: null, Qp: null, tau2: null, k: null, N: null, cer: null, piLo: null, piHi: null, grade: null });
+  renderOutcomeTabs();
+  switchOutcome(outcomes.length - 1);
+}
+
+function renderOutcomeTabs() {
+  const tabs = document.getElementById('outcomeTabs');
+  tabs.innerHTML = outcomes.map((o, i) =>
+    '<span class="outcome-tab' + (i === activeOutcome ? ' active' : '') + '" onclick="switchOutcome(' + i + ')">' + escapeHtml(o.name || 'Outcome ' + (i + 1)) + '</span>'
+  ).join('') + ' <button class="btn btn-sm btn-outline" style="margin-left:8px;" onclick="addOutcome()">+ Add</button>';
+}
+
+/* ── Paste Box Parser ── */
+function parsePasteBox() {
+  const text = document.getElementById('pasteBox').value;
+  if (!text || text.length < 5) return;
+
+  /* Try to extract common patterns */
+  const hrMatch = text.match(/(?:HR|OR|RR)\s*[=:]\s*(\d+\.?\d*)/i);
+  const ciMatch = text.match(/(?:95%?\s*)?CI[:\s]*(\d+\.?\d*)\s*[-\u2013to]+\s*(\d+\.?\d*)/i);
+  const i2Match = text.match(/I[²2]\s*[=:]\s*(\d+\.?\d*)%?/i);
+  const kMatch = text.match(/k\s*[=:]\s*(\d+)/i);
+  const nMatch = text.match(/[Nn]\s*[=:]\s*([\d,]+)/);
+  const qMatch = text.match(/Q\s*[=:]\s*(\d+\.?\d*)/i);
+  const pMatch = text.match(/[Pp]\s*[=<]\s*(0?\.\d+)/);
+  const tau2Match = text.match(/tau2?\s*[=:]\s*(\d+\.?\d*)/i);
+
+  if (hrMatch) document.getElementById('ocEstimate').value = hrMatch[1];
+  if (ciMatch) { document.getElementById('ocCiLo').value = ciMatch[1]; document.getElementById('ocCiHi').value = ciMatch[2]; }
+  if (i2Match) document.getElementById('ocI2').value = i2Match[1];
+  if (kMatch) document.getElementById('ocK').value = kMatch[1];
+  if (nMatch) document.getElementById('ocN').value = nMatch[1].replace(/,/g, '');
+  if (qMatch) document.getElementById('ocQ').value = qMatch[1];
+  if (pMatch) document.getElementById('ocPval').value = pMatch[1];
+  if (tau2Match) document.getElementById('ocTau2').value = tau2Match[1];
+
+  /* Detect measure type */
+  if (/\bHR\b/i.test(text)) document.getElementById('ocMeasure').value = 'HR';
+  else if (/\bOR\b/i.test(text)) document.getElementById('ocMeasure').value = 'OR';
+  else if (/\bRR\b/i.test(text)) document.getElementById('ocMeasure').value = 'RR';
+  else if (/\bMD\b/i.test(text)) document.getElementById('ocMeasure').value = 'MD';
+
+  saveOutcome();
+}
+
+/* ── GRADE Domain Rendering ── */
+function renderGradeDomains() {
+  const o = outcomes[activeOutcome];
+  const area = document.getElementById('gradeDomainsArea');
+
+  /* Auto-compute what we can */
+  const isRatio = ['HR', 'OR', 'RR'].includes(o.measure);
+  const nullValue = isRatio ? 1.0 : 0.0;
+
+  /* Inconsistency auto-assessment */
+  let inconDesc = '', inconLevel = 0;
+  if (o.I2 != null) {
+    if (o.I2 > 75) { inconLevel = 2; inconDesc = 'I\u00B2 = ' + o.I2.toFixed(0) + '% (substantial heterogeneity)'; }
+    else if (o.I2 > 50) {
+      const piCrossesNull = o.piLo != null && o.piHi != null && ((isRatio && o.piLo < nullValue && o.piHi > nullValue) || (!isRatio && o.piLo < 0 && o.piHi > 0));
+      inconLevel = piCrossesNull ? 1 : 0.5;
+      inconDesc = 'I\u00B2 = ' + o.I2.toFixed(0) + '%' + (piCrossesNull ? ', PI crosses null' : ', PI does not cross null');
+    }
+    else if (o.I2 > 30) { inconLevel = 0.5; inconDesc = 'I\u00B2 = ' + o.I2.toFixed(0) + '% (moderate)'; }
+    else { inconLevel = 0; inconDesc = 'I\u00B2 = ' + o.I2.toFixed(0) + '% (low heterogeneity)'; }
+  } else { inconDesc = 'I\u00B2 not provided'; }
+
+  /* Imprecision auto-assessment */
+  let imprecDesc = '', imprecLevel = 0;
+  const ciCrossesNull = o.ciLo != null && o.ciHi != null && ((isRatio && o.ciLo < nullValue && o.ciHi > nullValue) || (!isRatio && o.ciLo < 0 && o.ciHi > 0));
+  if (ciCrossesNull) { imprecLevel = 1; imprecDesc = 'CI crosses null (' + (o.ciLo?.toFixed(2) ?? '?') + ' to ' + (o.ciHi?.toFixed(2) ?? '?') + ')'; }
+  else if (o.N != null && o.estimate != null) {
+    const estAbs = Math.abs(isRatio ? Math.log(o.estimate) : o.estimate);
+    const z = 1.96, beta = 0.842;
+    const ois = estAbs > 0.01 ? Math.ceil(4 * Math.pow(z + beta, 2) / (estAbs * estAbs)) : 10000;
+    if (o.N < ois) { imprecLevel = 1; imprecDesc = 'N=' + o.N.toLocaleString() + ' < OIS=' + ois.toLocaleString(); }
+    else { imprecLevel = 0; imprecDesc = 'N=' + o.N.toLocaleString() + ' >= OIS=' + ois.toLocaleString() + ', CI excludes null'; }
+  } else { imprecDesc = 'Insufficient data for imprecision assessment'; }
+
+  let html = '';
+
+  /* Domain 1: Risk of Bias (guided) */
+  html += '<div class="domain-card"><div class="domain-header"><div class="domain-name">Risk of Bias</div><div id="rob-light" class="domain-light light-green"></div></div>';
+  html += '<label style="font-size:0.78rem;">What proportion of evidence weight comes from studies with high or some concerns?</label>';
+  html += '<select id="robSelect" style="width:100%;padding:6px;margin-top:4px;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;background:var(--bg);color:var(--text);" onchange="updateDomainLights()">';
+  html += '<option value="0">None — all studies at low risk</option>';
+  html += '<option value="0.5">&lt; 50% of weight from some/high concerns</option>';
+  html += '<option value="1">50%+ of weight from some/high concerns</option>';
+  html += '<option value="2">Most evidence at high risk of bias</option>';
+  html += '</select></div>';
+
+  /* Domain 2: Inconsistency (auto-computed) */
+  const inconColor = inconLevel === 0 ? 'light-green' : inconLevel <= 0.5 ? 'light-amber' : 'light-red';
+  html += '<div class="domain-card"><div class="domain-header"><div class="domain-name">Inconsistency</div><div class="domain-light ' + inconColor + '"></div></div>';
+  html += '<div style="font-size:0.82rem;color:var(--text2);">Auto-assessed: <strong>' + escapeHtml(inconDesc) + '</strong></div>';
+  html += '<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Downgrade: ' + inconLevel + ' | Override: <select id="inconOverride" style="font-size:0.75rem;padding:2px;" onchange="updateDomainLights()"><option value="">Use auto</option><option value="0">No downgrade</option><option value="1">Serious (-1)</option><option value="2">Very serious (-2)</option></select></div>';
+  html += '</div>';
+
+  /* Domain 3: Indirectness (guided) */
+  html += '<div class="domain-card"><div class="domain-header"><div class="domain-name">Indirectness</div><div id="indirect-light" class="domain-light light-green"></div></div>';
+  html += '<div style="font-size:0.78rem;display:grid;grid-template-columns:1fr 1fr;gap:6px;">';
+  html += '<label><input type="checkbox" id="indPop" onchange="updateDomainLights()"> Population differs from target</label>';
+  html += '<label><input type="checkbox" id="indInt" onchange="updateDomainLights()"> Intervention differs</label>';
+  html += '<label><input type="checkbox" id="indComp" onchange="updateDomainLights()"> Comparator differs</label>';
+  html += '<label><input type="checkbox" id="indOut" onchange="updateDomainLights()"> Outcome is surrogate</label>';
+  html += '</div></div>';
+
+  /* Domain 4: Imprecision (auto-computed) */
+  const imprecColor = imprecLevel === 0 ? 'light-green' : imprecLevel <= 0.5 ? 'light-amber' : 'light-red';
+  html += '<div class="domain-card"><div class="domain-header"><div class="domain-name">Imprecision</div><div class="domain-light ' + imprecColor + '"></div></div>';
+  html += '<div style="font-size:0.82rem;color:var(--text2);">Auto-assessed: <strong>' + escapeHtml(imprecDesc) + '</strong></div>';
+  html += '<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Downgrade: ' + imprecLevel + ' | Override: <select id="imprecOverride" style="font-size:0.75rem;padding:2px;" onchange="updateDomainLights()"><option value="">Use auto</option><option value="0">No downgrade</option><option value="1">Serious (-1)</option><option value="2">Very serious (-2)</option></select></div>';
+  html += '</div>';
+
+  /* Domain 5: Publication Bias (guided) */
+  html += '<div class="domain-card"><div class="domain-header"><div class="domain-name">Publication Bias</div><div id="pubbias-light" class="domain-light light-green"></div></div>';
+  html += '<div style="font-size:0.78rem;display:grid;grid-template-columns:1fr 1fr;gap:6px;">';
+  html += '<label><input type="checkbox" id="pbFunnel" onchange="updateDomainLights()"> Funnel plot asymmetric</label>';
+  html += '<label><input type="checkbox" id="pbEgger" onchange="updateDomainLights()"> Egger test p &lt; 0.10</label>';
+  html += '<label><input type="checkbox" id="pbUnpub" onchange="updateDomainLights()"> Known unpublished studies</label>';
+  html += '<label><input type="checkbox" id="pbSmall" onchange="updateDomainLights()"> Small study effects suspected</label>';
+  html += '</div></div>';
+
+  area.innerHTML = html;
+}
+
+function updateDomainLights() {
+  /* RoB */
+  const robVal = parseFloat(document.getElementById('robSelect')?.value ?? '0');
+  const robLight = document.getElementById('rob-light');
+  if (robLight) robLight.className = 'domain-light ' + (robVal === 0 ? 'light-green' : robVal <= 0.5 ? 'light-amber' : 'light-red');
+
+  /* Indirectness */
+  const indChecks = ['indPop','indInt','indComp','indOut'].filter(id => document.getElementById(id)?.checked).length;
+  const indLight = document.getElementById('indirect-light');
+  if (indLight) indLight.className = 'domain-light ' + (indChecks === 0 ? 'light-green' : indChecks <= 1 ? 'light-amber' : 'light-red');
+
+  /* Publication Bias */
+  const pbChecks = ['pbFunnel','pbEgger','pbUnpub','pbSmall'].filter(id => document.getElementById(id)?.checked).length;
+  const pbLight = document.getElementById('pubbias-light');
+  if (pbLight) pbLight.className = 'domain-light ' + (pbChecks === 0 ? 'light-green' : pbChecks <= 1 ? 'light-amber' : 'light-red');
+}
+
+/* ── Run Assessment ── */
+function runAssessment() {
+  for (let i = 0; i < outcomes.length; i++) {
+    const o = outcomes[i];
+    if (o.estimate == null) continue;
+
+    const isRatio = ['HR','OR','RR'].includes(o.measure);
+    const nullVal = isRatio ? 1.0 : 0.0;
+
+    /* Collect domain scores */
+    const robVal = parseFloat(document.getElementById('robSelect')?.value ?? '0');
+    const robReason = robVal === 0 ? 'All studies at low risk of bias' : robVal <= 0.5 ? 'Minor concerns in minority of evidence' : robVal <= 1 ? 'Majority of evidence at some/high risk' : 'Most evidence at high risk of bias';
+
+    /* Inconsistency */
+    let inconLevel = 0, inconReason = 'Not assessed';
+    if (o.I2 != null) {
+      if (o.I2 > 75) { inconLevel = 2; inconReason = 'I\u00B2=' + o.I2.toFixed(0) + '% — substantial heterogeneity'; }
+      else if (o.I2 > 50) {
+        const piNull = o.piLo != null && o.piHi != null && ((isRatio && o.piLo < nullVal && o.piHi > nullVal) || (!isRatio && o.piLo < 0 && o.piHi > 0));
+        inconLevel = piNull ? 1 : 0.5;
+        inconReason = 'I\u00B2=' + o.I2.toFixed(0) + '%' + (piNull ? ', prediction interval crosses null' : '');
+      }
+      else { inconLevel = 0; inconReason = 'I\u00B2=' + o.I2.toFixed(0) + '% — acceptable'; }
+    }
+    const inconOvr = document.getElementById('inconOverride')?.value;
+    if (inconOvr !== '' && inconOvr != null) { inconLevel = parseFloat(inconOvr); inconReason += ' (overridden)'; }
+
+    /* Indirectness */
+    const indChecks = ['indPop','indInt','indComp','indOut'].filter(id => document.getElementById(id)?.checked);
+    const indLevel = indChecks.length >= 2 ? 1 : indChecks.length === 1 ? 0.5 : 0;
+    const indReason = indChecks.length === 0 ? 'Direct evidence' : 'Concerns: ' + indChecks.map(id => ({indPop:'population',indInt:'intervention',indComp:'comparator',indOut:'outcome'})[id]).join(', ');
+
+    /* Imprecision */
+    let imprecLevel = 0, imprecReason = '';
+    const ciNull = o.ciLo != null && o.ciHi != null && ((isRatio && o.ciLo < nullVal && o.ciHi > nullVal) || (!isRatio && o.ciLo < 0 && o.ciHi > 0));
+    if (ciNull && o.N && o.estimate) { const estAbs2 = Math.abs(isRatio ? Math.log(o.estimate) : o.estimate); const ois2 = estAbs2 > 0.01 ? Math.ceil(4 * Math.pow(1.96 + 0.842, 2) / (estAbs2 * estAbs2)) : 10000; imprecLevel = (o.N < ois2) ? 2 : 1; imprecReason = 'CI crosses null' + (o.N < ois2 ? ' AND N below OIS' : ''); }
+    else if (ciNull) { imprecLevel = 1; imprecReason = 'CI crosses null'; }
+    else if (o.N && o.estimate) {
+      const estAbs = Math.abs(isRatio ? Math.log(o.estimate) : o.estimate);
+      const ois = estAbs > 0.01 ? Math.ceil(4 * Math.pow(1.96 + 0.842, 2) / (estAbs * estAbs)) : 10000;
+      if (o.N < ois) { imprecLevel = 1; imprecReason = 'N=' + o.N.toLocaleString() + ' below OIS=' + ois.toLocaleString(); }
+      else { imprecLevel = 0; imprecReason = 'Adequate sample size, CI excludes null'; }
+    }
+    const imprecOvr = document.getElementById('imprecOverride')?.value;
+    if (imprecOvr !== '' && imprecOvr != null) { imprecLevel = parseFloat(imprecOvr); imprecReason += ' (overridden)'; }
+
+    /* Publication bias */
+    const pbChecks = ['pbFunnel','pbEgger','pbUnpub','pbSmall'].filter(id => document.getElementById(id)?.checked);
+    const pbLevel = pbChecks.length >= 2 ? 1 : pbChecks.length === 1 ? 0.5 : 0;
+    const pbReason = pbChecks.length === 0 ? 'No evidence of publication bias' : pbChecks.length + ' concern(s) flagged';
+
+    /* Total */
+    const startCertainty = o.design === 'RCT' ? 4 : 2;
+    const totalDowngrade = Math.min(robVal, 2) + Math.min(inconLevel, 2) + Math.min(indLevel, 2) + Math.min(imprecLevel, 2) + Math.min(pbLevel, 2);
+    const finalLevel = Math.max(1, startCertainty - totalDowngrade);
+    const certaintyLabels = { 4: 'HIGH', 3: 'MODERATE', 2: 'LOW', 1: 'VERY LOW' };
+    const finalCertainty = certaintyLabels[Math.round(finalLevel)] ?? 'VERY LOW';
+
+    /* NNT */
+    let nnt = null;
+    if (isRatio && o.cer && o.estimate < 1) {
+      const cer = o.cer / 100;
+      let ard;
+      if (o.measure === 'RR') { ard = cer * (1 - o.estimate); }
+      else if (o.measure === 'OR') { const eer = (o.estimate * cer) / (1 - cer + o.estimate * cer); ard = cer - eer; }
+      else { ard = cer * (1 - o.estimate); } /* HR approximation */
+      if (ard > 0) nnt = Math.round(1 / ard);
+    }
+
+    o.grade = {
+      domains: {
+        rob: { level: Math.min(robVal, 2), reason: robReason },
+        inconsistency: { level: Math.min(inconLevel, 2), reason: inconReason },
+        indirectness: { level: Math.min(indLevel, 2), reason: indReason },
+        imprecision: { level: Math.min(imprecLevel, 2), reason: imprecReason },
+        publicationBias: { level: Math.min(pbLevel, 2), reason: pbReason }
+      },
+      startCertainty: o.design === 'RCT' ? 'HIGH' : 'LOW',
+      totalDowngrade,
+      finalCertainty,
+      nnt
+    };
+  }
+
+  renderResults();
+}
+
+/* ── Render Results ── */
+function renderResults() {
+  const card = document.getElementById('resultsCard');
+  const area = document.getElementById('resultsArea');
+  card.style.display = '';
+
+  let html = '';
+
+  /* Visual summary for each outcome */
+  for (const o of outcomes) {
+    if (!o.grade) continue;
+    const g = o.grade;
+    const certColors = { HIGH: 'cert-high', MODERATE: 'cert-mod', LOW: 'cert-low', 'VERY LOW': 'cert-vlow' };
+    const certSymbols = { HIGH: '\u2b24\u2b24\u2b24\u2b24', MODERATE: '\u2b24\u2b24\u2b24\u25ef', LOW: '\u2b24\u2b24\u25ef\u25ef', 'VERY LOW': '\u2b24\u25ef\u25ef\u25ef' };
+    const certColor = certColors[g.finalCertainty] ?? 'cert-low';
+
+    html += '<div style="margin-bottom:16px;padding:12px;border-left:4px solid ' + (g.finalCertainty === 'HIGH' ? 'var(--success)' : g.finalCertainty === 'MODERATE' ? 'var(--warning)' : 'var(--danger)') + ';background:var(--bg2);border-radius:0 var(--radius) var(--radius) 0;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    html += '<strong>' + escapeHtml(o.name || 'Outcome') + '</strong>';
+    html += '<div class="certainty-bar ' + certColor + '">' + certSymbols[g.finalCertainty] + ' ' + g.finalCertainty + '</div>';
+    html += '</div>';
+
+    /* Traffic lights */
+    html += '<div class="traffic-row">';
+    const domainNames = { rob: 'RoB', inconsistency: 'Inconsistency', indirectness: 'Indirectness', imprecision: 'Imprecision', publicationBias: 'Pub Bias' };
+    for (const [key, d] of Object.entries(g.domains)) {
+      const color = d.level === 0 ? 'light-green' : d.level <= 0.5 ? 'light-amber' : 'light-red';
+      html += '<div class="traffic-item"><span class="domain-light ' + color + '"></span> ' + domainNames[key] + '</div>';
+    }
+    html += '</div>';
+
+    /* Plain language */
+    const langMap = { HIGH: 'We are very confident that the true effect lies close to the estimate.',
+      MODERATE: 'We are moderately confident. The true effect is likely close to the estimate, but may be substantially different.',
+      LOW: 'Our confidence is limited. The true effect may be substantially different from the estimate.',
+      'VERY LOW': 'We have very little confidence. The true effect is likely substantially different.' };
+    html += '<div style="font-size:0.82rem;font-style:italic;color:var(--text2);">' + langMap[g.finalCertainty] + '</div>';
+    html += '</div>';
+  }
+
+  /* Evidence Profile Table */
+  html += '<h3 style="margin:16px 0 8px;font-size:1rem;">Evidence Profile</h3>';
+  html += '<div style="overflow-x:auto;"><table><thead><tr><th>Outcome</th><th>k</th><th>Design</th><th>RoB</th><th>Inconsistency</th><th>Indirectness</th><th>Imprecision</th><th>Pub Bias</th><th>Certainty</th></tr></thead><tbody>';
+  for (const o of outcomes) {
+    if (!o.grade) continue;
+    const g = o.grade;
+    html += '<tr><td style="font-weight:600;">' + escapeHtml(o.name || 'Outcome') + '</td>';
+    html += '<td>' + (o.k ?? '?') + '</td>';
+    html += '<td>' + o.design + '</td>';
+    for (const d of Object.values(g.domains)) {
+      const badge = d.level === 0 ? 'badge-green' : d.level <= 0.5 ? 'badge-amber' : 'badge-red';
+      const label = d.level === 0 ? 'No' : d.level <= 1 ? 'Serious' : 'Very serious';
+      html += '<td title="' + escapeHtml(d.reason) + '"><span class="badge ' + badge + '">' + label + '</span></td>';
+    }
+    const certBadge = g.finalCertainty === 'HIGH' ? 'badge-green' : g.finalCertainty === 'MODERATE' ? 'badge-amber' : 'badge-red';
+    html += '<td><span class="badge ' + certBadge + '">' + g.finalCertainty + '</span></td></tr>';
+  }
+  html += '</tbody></table></div>';
+
+  /* Footnotes */
+  html += '<div class="footnotes"><strong>Footnotes:</strong><br>';
+  let fnIdx = 1;
+  for (const o of outcomes) {
+    if (!o.grade) continue;
+    for (const [key, d] of Object.entries(o.grade.domains)) {
+      if (d.level > 0) {
+        html += '<sup>' + fnIdx + '</sup> ' + escapeHtml(o.name) + ' — ' + escapeHtml({ rob: 'Risk of Bias', inconsistency: 'Inconsistency', indirectness: 'Indirectness', imprecision: 'Imprecision', publicationBias: 'Publication Bias' }[key]) + ': ' + escapeHtml(d.reason) + '<br>';
+        fnIdx++;
+      }
+    }
+  }
+  html += '</div>';
+
+  /* Summary of Findings Table */
+  html += '<h3 style="margin:16px 0 8px;font-size:1rem;">Summary of Findings</h3>';
+  html += '<div style="overflow-x:auto;"><table class="sof-table"><thead><tr><th style="text-align:left;">Outcome</th><th>Relative Effect<br>(95% CI)</th><th>Anticipated<br>Control</th><th>Anticipated<br>Intervention</th><th>NNT</th><th>Participants<br>(studies)</th><th>Certainty</th></tr></thead><tbody>';
+  for (const o of outcomes) {
+    if (!o.grade) continue;
+    const est = o.estimate;
+    const ciStr = (o.ciLo?.toFixed(2) ?? '?') + ' to ' + (o.ciHi?.toFixed(2) ?? '?');
+    const isRatio = ['HR','OR','RR'].includes(o.measure);
+    let controlRate = o.cer ? (o.cer / 100 * 1000).toFixed(0) + ' per 1000' : '\u2014';
+    let interventionRate = '\u2014';
+    if (o.cer && isRatio && est) {
+      const cer01 = o.cer / 100; const eer = o.measure === "OR" ? (est * cer01) / (1 - cer01 + est * cer01) : cer01 * est; const ir = (eer * 1000).toFixed(0);
+      interventionRate = ir + ' per 1000';
+    }
+    const certBadge = o.grade.finalCertainty === 'HIGH' ? 'badge-green' : o.grade.finalCertainty === 'MODERATE' ? 'badge-amber' : 'badge-red';
+    html += '<tr><td style="text-align:left;font-weight:600;">' + escapeHtml(o.name || 'Outcome') + '</td>';
+    html += '<td>' + o.measure + ' ' + est?.toFixed(2) + '<br>(' + ciStr + ')</td>';
+    html += '<td>' + controlRate + '</td>';
+    html += '<td>' + interventionRate + '</td>';
+    html += '<td>' + (o.grade.nnt ?? '\u2014') + '</td>';
+    html += '<td>' + (o.N?.toLocaleString() ?? '?') + '<br>(' + (o.k ?? '?') + ' ' + o.design + 's)</td>';
+    html += '<td><span class="badge ' + certBadge + '">' + o.grade.finalCertainty + '</span></td></tr>';
+  }
+  html += '</tbody></table></div>';
+
+  area.innerHTML = html;
+  document.getElementById('exportCard').style.display = '';
+}
+
+/* ── Export Functions ── */
+function copySoF() {
+  const table = document.querySelector('.sof-table');
+  if (!table) return;
+  const range = document.createRange();
+  range.selectNode(table);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  document.execCommand('copy');
+  window.getSelection().removeAllRanges();
+  alert('SoF table copied to clipboard (paste into Word).');
+}
+
+function copyEP() {
+  const tables = document.querySelectorAll('#resultsArea table');
+  if (tables.length < 1) return;
+  const range = document.createRange();
+  range.selectNode(tables[0]);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  document.execCommand('copy');
+  window.getSelection().removeAllRanges();
+  alert('Evidence Profile copied.');
+}
+
+function copyManuscript() {
+  let text = 'GRADE Assessment Results\n\n';
+  for (const o of outcomes) {
+    if (!o.grade) continue;
+    text += o.name + ': ' + o.measure + ' ' + o.estimate?.toFixed(2) + ' (95% CI ' + o.ciLo?.toFixed(2) + ' to ' + o.ciHi?.toFixed(2) + '). ';
+    text += 'Certainty of evidence: ' + o.grade.finalCertainty + ' (GRADE). ';
+    const downgrades = Object.entries(o.grade.domains).filter(([k, d]) => d.level > 0).map(([k, d]) => d.reason);
+    if (downgrades.length > 0) text += 'Downgraded for: ' + downgrades.join('; ') + '. ';
+    if (o.grade.nnt) text += 'NNT = ' + o.grade.nnt + '. ';
+    text += '\n\n';
+  }
+  navigator.clipboard.writeText(text).then(() => alert('Manuscript text copied.'));
+}
+
+function downloadCSV() {
+  let csv = 'Outcome,Measure,Estimate,CI Lower,CI Upper,I2,k,N,RoB,Inconsistency,Indirectness,Imprecision,PubBias,Certainty,NNT\n';
+  for (const o of outcomes) {
+    if (!o.grade) continue;
+    const g = o.grade;
+    csv += ['"' + (o.name ?? '') + '"', o.measure, o.estimate, o.ciLo, o.ciHi, o.I2, o.k, o.N,
+      g.domains.rob.level, g.domains.inconsistency.level, g.domains.indirectness.level,
+      g.domains.imprecision.level, g.domains.publicationBias.level, g.finalCertainty, g.nnt ?? ''].join(',') + '\n';
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'AutoGRADE_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ── Init ── */
+renderGradeDomains();
+</script>
+</body>
+</html>

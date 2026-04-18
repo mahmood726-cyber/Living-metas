@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ESC ACS - R Package Validation</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #1a1a2e;
+        color: #e0e0e0;
+      }
+      h1 {
+        color: #00d4ff;
+        border-bottom: 2px solid #00d4ff;
+        padding-bottom: 10px;
+      }
+      h2 {
+        color: #ff6b6b;
+        margin-top: 30px;
+      }
+      .header-info {
+        background: #16213e;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border-left: 4px solid #00d4ff;
+      }
+      .header-info p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .stat-box {
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+      }
+      .stat-box .number {
+        font-size: 36px;
+        font-weight: bold;
+        display: block;
+      }
+      .stat-box .label {
+        font-size: 14px;
+        opacity: 0.8;
+      }
+      .stat-passed {
+        background: linear-gradient(135deg, #00b894, #00cec9);
+        color: white;
+      }
+      .stat-failed {
+        background: linear-gradient(135deg, #d63031, #e17055);
+        color: white;
+      }
+      .stat-warnings {
+        background: linear-gradient(135deg, #fdcb6e, #f39c12);
+        color: #2d3436;
+      }
+      .stat-duration {
+        background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+        color: white;
+      }
+      .suite {
+        background: #16213e;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        border-left: 4px solid #6c5ce7;
+      }
+      .suite-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+      }
+      .suite-header h3 {
+        margin: 0;
+        color: #00d4ff;
+      }
+      .suite-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .suite-badge.pass {
+        background: #00b894;
+        color: white;
+      }
+      .suite-badge.fail {
+        background: #d63031;
+        color: white;
+      }
+      .r-code {
+        background: #0f0f1a;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 12px;
+        overflow-x: auto;
+        margin: 10px 0;
+        border: 1px solid #333;
+        white-space: pre-wrap;
+        color: #a0a0a0;
+      }
+      .test-results {
+        margin-top: 15px;
+      }
+      .test-item {
+        padding: 8px 15px;
+        margin: 5px 0;
+        border-radius: 6px;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .test-item.pass {
+        background: rgba(0, 184, 148, 0.2);
+        border-left: 3px solid #00b894;
+      }
+      .test-item.fail {
+        background: rgba(214, 48, 49, 0.2);
+        border-left: 3px solid #d63031;
+      }
+      .test-name {
+        flex: 1;
+      }
+      .test-values {
+        font-family: monospace;
+        font-size: 12px;
+        color: #888;
+      }
+      button {
+        background: linear-gradient(135deg, #00d4ff, #0984e3);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        margin: 10px 5px 10px 0;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .progress-bar {
+        height: 4px;
+        background: #333;
+        border-radius: 2px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+      .progress-bar .fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00d4ff, #00b894);
+        width: 0%;
+        transition: width 0.3s;
+      }
+      .console-output {
+        background: #0f0f1a;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-top: 20px;
+        border: 1px solid #333;
+      }
+      .console-output .line {
+        margin: 2px 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .console-output .line.pass {
+        color: #00b894;
+      }
+      .console-output .line.fail {
+        color: #ff6b6b;
+      }
+      .console-output .line.header {
+        color: #00d4ff;
+        font-weight: bold;
+      }
+      .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      .summary-table th, .summary-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #333;
+      }
+      .summary-table th {
+        background: #0f0f1a;
+        color: #00d4ff;
+      }
+      .summary-table tr:hover {
+        background: rgba(0, 212, 255, 0.1);
+      }
+      .tolerance-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #333;
+        margin-left: 8px;
+      }
+      #running-indicator {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        color: #00d4ff;
+      }
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 3px solid #333;
+        border-top-color: #00d4ff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔬 R Package Validation Suite</h1>
+
+    <div class="header-info">
+      <p><strong>Purpose:</strong> Validate statistical functions against R meta-analysis packages</p>
+      <p><strong>Reference Packages:</strong> metafor v4.6, meta v7.0, netmeta v2.9, mada v0.5.11</p>
+      <p><strong>Tolerance Standard:</strong> ε < 0.05 for effect estimates, ε < 5% for percentages</p>
+    </div>
+
+    <button onclick="runValidation()" id="runBtn">▶ Run Full Validation</button>
+    <button onclick="runSingleSuite()" id="singleBtn">Run Single Suite</button>
+    <select id="suiteSelect" style="padding: 10px; border-radius: 5px; background: #16213e; color: #e0e0e0; border: 1px solid #333;">
+      <option value="bcg">BCG Vaccine (metafor)</option>
+      <option value="fleiss">Fleiss93 Aspirin (meta)</option>
+      <option value="normand">Normand1999 Hospital Stay</option>
+      <option value="nma">Senn2013 NMA (netmeta)</option>
+      <option value="bias">Publication Bias Tests</option>
+      <option value="chisq">Chi-squared Quantiles</option>
+      <option value="dta">Diagnostic Test Accuracy (mada)</option>
+      <option value="raudenbush">Raudenbush1985 SMD</option>
+      <option value="effect">Effect Size Calculations</option>
+      <option value="cumul">Cumulative Meta-Analysis</option>
+    </select>
+
+    <div id="running-indicator">
+      <div class="spinner"></div>
+      <span>Running validation...</span>
+    </div>
+
+    <div class="progress-bar">
+      <div class="fill" id="progress"></div>
+    </div>
+
+    <div class="stats" id="stats" style="display: none;">
+      <div class="stat-box stat-passed">
+        <span class="number" id="passedCount">0</span>
+        <span class="label">Passed</span>
+      </div>
+      <div class="stat-box stat-failed">
+        <span class="number" id="failedCount">0</span>
+        <span class="label">Failed</span>
+      </div>
+      <div class="stat-box stat-warnings">
+        <span class="number" id="warningsCount">0</span>
+        <span class="label">Warnings</span>
+      </div>
+      <div class="stat-box stat-duration">
+        <span class="number" id="duration">0</span>
+        <span class="label">ms</span>
+      </div>
+    </div>
+
+    <div id="suites-container"></div>
+
+    <h2>Console Output</h2>
+    <div class="console-output" id="console"></div>
+
+    <script type="module">
+      import {
+        runRValidation,
+        validateBCGData,
+        validateFleiss93,
+        validateNormand1999,
+        validateSenn2013NMA,
+        validatePublicationBiasTests,
+        validateChiSquaredQuantiles,
+        validateDTAAnalysis,
+        validateRaudenbush1985,
+        validateEffectSizeCalculations,
+        validateCumulativeMetaAnalysis
+      } from "./r-validation.js";
+
+      const consoleEl = document.getElementById('console');
+      const originalLog = console.log;
+      const originalError = console.error;
+      const originalWarn = console.warn;
+
+      function addConsoleLine(text, type = '') {
+        const line = document.createElement('div');
+        line.className = `line ${type}`;
+        line.textContent = text;
+        consoleEl.appendChild(line);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      }
+
+      console.log = function(...args) {
+        originalLog.apply(console, args);
+        const text = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+        let type = '';
+        if (text.includes('✓')) type = 'pass';
+        else if (text.includes('✗')) type = 'fail';
+        else if (text.includes('===') || text.includes('VALIDATION')) type = 'header';
+        addConsoleLine(text, type);
+      };
+
+      console.error = function(...args) {
+        originalError.apply(console, args);
+        const text = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+        addConsoleLine(text, 'fail');
+      };
+
+      console.warn = function(...args) {
+        originalWarn.apply(console, args);
+        const text = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+        addConsoleLine('⚠ ' + text, 'warn');
+      };
+
+      const suiteMap = {
+        bcg: validateBCGData,
+        fleiss: validateFleiss93,
+        normand: validateNormand1999,
+        nma: validateSenn2013NMA,
+        bias: validatePublicationBiasTests,
+        chisq: validateChiSquaredQuantiles,
+        dta: validateDTAAnalysis,
+        raudenbush: validateRaudenbush1985,
+        effect: validateEffectSizeCalculations,
+        cumul: validateCumulativeMetaAnalysis
+      };
+
+      window.runValidation = async function() {
+        const btn = document.getElementById('runBtn');
+        const indicator = document.getElementById('running-indicator');
+        btn.disabled = true;
+        indicator.style.display = 'flex';
+        consoleEl.innerHTML = '';
+
+        document.getElementById('progress').style.width = '10%';
+
+        await new Promise(r => setTimeout(r, 100));
+
+        try {
+          document.getElementById('progress').style.width = '30%';
+          const results = runRValidation();
+          document.getElementById('progress').style.width = '100%';
+
+          document.getElementById('stats').style.display = 'grid';
+          document.getElementById('passedCount').textContent = results.passed;
+          document.getElementById('failedCount').textContent = results.failed;
+          document.getElementById('warningsCount').textContent = results.warnings;
+          document.getElementById('duration').textContent = results.endTime - results.startTime;
+
+          renderSuites(results.suites);
+        } catch (err) {
+          console.error('Validation error:', err.message);
+        } finally {
+          btn.disabled = false;
+          indicator.style.display = 'none';
+        }
+      };
+
+      window.runSingleSuite = async function() {
+        const suite = document.getElementById('suiteSelect').value;
+        const fn = suiteMap[suite];
+        if (!fn) return;
+
+        consoleEl.innerHTML = '';
+        document.getElementById('progress').style.width = '50%';
+
+        await new Promise(r => setTimeout(r, 50));
+
+        try {
+          fn();
+          document.getElementById('progress').style.width = '100%';
+        } catch (err) {
+          console.error('Suite error:', err.message);
+        }
+      };
+
+      function renderSuites(suites) {
+        const container = document.getElementById('suites-container');
+        container.innerHTML = '';
+
+        suites.forEach(suite => {
+          const passCount = suite.tests?.filter(t => t.passed).length || 0;
+          const failCount = suite.tests?.filter(t => !t.passed).length || 0;
+          const status = failCount === 0 ? 'pass' : 'fail';
+
+          const suiteEl = document.createElement('div');
+          suiteEl.className = 'suite';
+          suiteEl.innerHTML = `
+            <div class="suite-header">
+              <h3>${suite.name}</h3>
+              <span class="suite-badge ${status}">${passCount}/${passCount + failCount}</span>
+            </div>
+            ${suite.rCode ? `<div class="r-code">${escapeHtml(suite.rCode)}</div>` : ''}
+            <div class="test-results">
+              ${(suite.tests || []).map(t => `
+                <div class="test-item ${t.passed ? 'pass' : 'fail'}">
+                  <span class="test-name">${t.passed ? '✓' : '✗'} ${t.name}</span>
+                  <span class="test-values">
+                    ${t.expected !== undefined ? `exp: ${formatNum(t.expected)}` : ''}
+                    ${t.actual !== undefined ? ` | got: ${formatNum(t.actual)}` : ''}
+                    ${t.tolerance !== undefined ? `<span class="tolerance-badge">±${t.tolerance}</span>` : ''}
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          container.appendChild(suiteEl);
+        });
+      }
+
+      function formatNum(n) {
+        if (n === undefined || n === null) return 'N/A';
+        if (typeof n !== 'number') return String(n);
+        return n.toFixed(4);
+      }
+
+      function escapeHtml(text) {
+        return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+    </script>
+  </body>
+</html>

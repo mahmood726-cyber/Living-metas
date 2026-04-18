@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Living Meta Review</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      --bg: #f6efe3;
+      --panel: rgba(255,250,242,0.94);
+      --line: rgba(61,50,34,0.14);
+      --ink: #14110c;
+      --muted: #665d4d;
+      --sage: #0f6a58;
+      --amber: #c98a20;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI Variable Text", "Aptos", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #f7f1e6 0%, #eee4d5 100%);
+    }
+    main {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 1.1rem;
+      margin-top: 1rem;
+    }
+    h1, h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      margin: 0;
+    }
+    h1 { font-size: clamp(2rem, 4.8vw, 4rem); margin-top: 0.6rem; }
+    h2 { margin-bottom: 0.55rem; }
+    .eyebrow, .pill {
+      display: inline-flex;
+      padding: 0.3rem 0.56rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.72rem;
+      background: rgba(255,255,255,0.72);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.9rem;
+      margin-top: 0.9rem;
+    }
+    .mini-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 0.9rem;
+      background: rgba(255,255,255,0.72);
+    }
+    .value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-top: 0.2rem;
+    }
+    .muted, li, p { color: var(--muted); line-height: 1.58; }
+    ul { margin: 0.65rem 0 0 1.1rem; }
+    a { color: var(--sage); text-decoration: none; font-weight: 600; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: Consolas, monospace;
+      background: rgba(20,17,12,0.06);
+      padding: 0.12rem 0.3rem;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <div class="eyebrow">Review and Improvement</div>
+      <h1>Living Meta Consolidation Review</h1>
+      <p>
+        The living-meta work is no longer missing. It is fragmented. The main issue is duplication across
+        active project folders, `e156-submission` bundles, backup copies, and rough scratch variants.
+        The right operating model is a central library in <code>C:\Living metas</code> while leaving the
+        source projects intact.
+      </p>
+      <div class="grid">
+        <div class="mini-card">
+          <div class="pill">Current</div>
+          <div class="value">37</div>
+          <div class="muted">Live originals worth surfacing in the main library.</div>
+        </div>
+        <div class="mini-card">
+          <div class="pill">Submission</div>
+          <div class="value">37</div>
+          <div class="muted">Packaged copies. Useful as archive, but not source of truth.</div>
+        </div>
+        <div class="mini-card">
+          <div class="pill">Archive</div>
+          <div class="value">13</div>
+          <div class="muted">Backup and scratch material that should not be edited first.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Control Center</h2>
+      <ul>
+        <li><a href="index.html">Living Meta File Atlas</a> tracks the original source files where they currently live.</li>
+        <li><a href="library.html">Living Meta Library</a> browses the centralized copies under <code>C:\Living metas\Library</code>.</li>
+        <li><a href="transparency-review.html">Living Meta Transparency Review</a> records the multi-persona audit, portfolio gaps, and published-meta benchmarks.</li>
+        <li><a href="file:///C:/Living%20metas/Library/Current">Open Current Library Folder</a> jumps directly into the copied current working set.</li>
+        <li><a href="file:///C:/Living%20metas/Organized">Open Organized Shortcuts</a> opens the grouped shortcut folders for the original files.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Findings</h2>
+      <ul>
+        <li>The largest duplication pressure is in the Finrenone line: current reviews, living-meta copies, support tools, submission copies, and backups all coexist.</li>
+        <li>The TEER, PFA AF, ESC/ACS, Watchman/Amulet, and living-meta-engine files are much cleaner and can act as canonical current assets.</li>
+        <li>`e156-submission` directories are valuable for packaged export, but they should be treated as archive outputs, not primary working files.</li>
+        <li>The old root copy <a href="file:///C:/Living%20metas/FINERENONE_REVIEW.html">FINERENONE_REVIEW.html</a> is now a legacy copy. The more current source is <a href="file:///C:/Projects/Finrenone/FINERENONE_REVIEW.html">C:\Projects\Finrenone\FINERENONE_REVIEW.html</a>.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Recommended Canonical Working Set</h2>
+      <ul>
+        <li>Finerenone review family from <code>C:\Projects\Finrenone</code></li>
+        <li>Tricuspid TEER living meta from <code>C:\Projects\Tricuspid_TEER_LivingMeta</code></li>
+        <li>PFA AF living meta from <code>C:\Projects\PFA_AF_LivingMeta</code></li>
+        <li>ESC ACS living meta from <code>C:\Projects\esc-acs-living-meta</code></li>
+        <li>Watchman/Amulet from <code>C:\Projects\LivingMeta_Watchman_Amulet</code></li>
+        <li>Living-meta app and engine from <code>C:\HTML apps\living-meta</code> and <code>C:\Projects\living-meta-engine</code></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>What Changed</h2>
+      <ul>
+        <li>A centralized shortcut index lives at <a href="index.html">Living Meta File Atlas</a>.</li>
+        <li>A real copy-based library now lives under <code>C:\Living metas\Library</code> and is browsable from <a href="library.html">Living Meta Library</a>.</li>
+        <li>Shortcuts remain under <code>C:\Living metas\Organized</code> for direct navigation to original files.</li>
+        <li>Rebuild scripts are available at <code>C:\Living metas\rebuild-organized.ps1</code> and <code>C:\Living metas\rebuild-library.ps1</code>.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RapidMeta Cardiology | AutoManuscript Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --accent: #3b82f6;
+            --surface: #0f172a;
+            --surface-raised: #1e293b;
+            --text-main: #f1f5f9;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .glass-lighter {
+            background: rgba(30, 41, 59, 0.45);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        /* Pill checkboxes */
+        .drug-pill input[type="checkbox"] { display: none; }
+        .drug-pill label {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 99px; cursor: pointer;
+            font-size: 11px; font-weight: 600; border: 1px solid #334155;
+            background: #0f172a; color: #94a3b8;
+            transition: all 0.15s;
+        }
+        .drug-pill input[type="checkbox"]:checked + label {
+            background: #1d4ed8; color: #bfdbfe; border-color: #3b82f6;
+        }
+
+        /* Manuscript preview card */
+        #manuscript-output {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 15px;
+            line-height: 1.75;
+            color: #0f172a;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 48px 56px;
+            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.5);
+        }
+        #manuscript-output h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; text-align: center; line-height: 1.35; }
+        #manuscript-output .ms-authors { font-size: 13px; color: #475569; text-align: center; margin-bottom: 4px; }
+        #manuscript-output .ms-journal { font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 28px; font-style: italic; }
+        #manuscript-output .ms-divider { border: none; border-top: 1px solid #e2e8f0; margin: 28px 0; }
+        #manuscript-output h2 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #1e293b; margin: 28px 0 10px; font-family: 'Inter', sans-serif; }
+        #manuscript-output h3 { font-size: 14px; font-weight: 600; color: #334155; margin: 20px 0 6px; font-family: 'Inter', sans-serif; }
+        #manuscript-output p { margin-bottom: 12px; text-align: justify; }
+        #manuscript-output .ms-table { width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 11.5px; margin: 16px 0; }
+        #manuscript-output .ms-table th { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 7px 10px; text-align: left; font-weight: 600; color: #334155; }
+        #manuscript-output .ms-table td { border: 1px solid #e2e8f0; padding: 6px 10px; vertical-align: top; }
+        #manuscript-output .ms-table tr:nth-child(even) td { background: #f8fafc; }
+        #manuscript-output .grade-high { color: #15803d; font-weight: 700; }
+        #manuscript-output .grade-moderate { color: #1d4ed8; font-weight: 700; }
+        #manuscript-output .grade-low { color: #b45309; font-weight: 700; }
+        #manuscript-output .grade-verylow { color: #dc2626; font-weight: 700; }
+        #manuscript-output .ms-sig { color: #15803d; }
+        #manuscript-output .ms-nonsig { color: #b45309; }
+        #manuscript-output sup { font-size: 9px; vertical-align: super; }
+        #manuscript-output .ms-placeholder { color: #94a3b8; font-style: italic; }
+
+        /* Stat banner */
+        .stat-pill {
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 99px;
+            padding: 4px 14px;
+            font-size: 12px;
+            color: #93c5fd;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Generate button */
+        #btn-generate {
+            background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%);
+            box-shadow: 0 4px 24px rgba(59,130,246,0.35);
+            transition: all 0.2s;
+        }
+        #btn-generate:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59,130,246,0.5); }
+        #btn-generate:active { transform: translateY(0); }
+
+        /* Section toggle */
+        .section-toggle {
+            display: inline-flex; border: 1px solid #334155; border-radius: 8px; overflow: hidden;
+        }
+        .section-toggle label {
+            padding: 6px 14px; font-size: 12px; cursor: pointer; color: #94a3b8;
+            transition: all 0.15s;
+        }
+        .section-toggle input[type="radio"] { display: none; }
+        .section-toggle input[type="radio"]:checked + label {
+            background: #1d4ed8; color: #fff;
+        }
+
+        /* @media print */
+        @media print {
+            body { background: white !important; }
+            .no-print { display: none !important; }
+            #manuscript-output {
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+                font-size: 12pt;
+                color: black;
+            }
+            #manuscript-output h1 { font-size: 18pt; }
+            #manuscript-output h2 { font-size: 11pt; }
+            #manuscript-output p { font-size: 11pt; }
+            .print-only-wrapper { padding: 0; margin: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- ===================== HEADER ===================== -->
+<header class="no-print max-w-6xl mx-auto px-6 pt-10 pb-4">
+    <div class="flex items-start justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg,#1d4ed8,#7c3aed)">
+                    <i class="fa-solid fa-file-pen text-white text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white leading-tight">AutoManuscript Generator</h1>
+                    <p class="text-xs text-slate-500">RapidMeta Cardiology Portfolio &bull; Methods + Results Draft</p>
+                </div>
+            </div>
+        </div>
+        <a href="META_DASHBOARD.html" class="text-xs text-slate-500 hover:text-blue-400 transition-colors flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-arrow-left text-[10px]"></i> Dashboard
+        </a>
+    </div>
+
+    <!-- Portfolio stat pills -->
+    <div id="stat-pills" class="flex flex-wrap gap-2 mt-4"></div>
+</header>
+
+<!-- ===================== CONTROLS ===================== -->
+<main class="no-print max-w-6xl mx-auto px-6 mt-6 space-y-5">
+
+    <!-- Row 1: Author / Journal -->
+    <div class="glass rounded-2xl p-5">
+        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
+            <i class="fa-solid fa-id-card mr-1.5"></i> Manuscript Header
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5" for="inp-authors">Author Names</label>
+                <input id="inp-authors" type="text" value="[Author Names]"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                    placeholder="e.g. Smith J, Jones K, et al.">
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5" for="inp-journal">Target Journal</label>
+                <input id="inp-journal" type="text" value="Journal of the American College of Cardiology"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                    placeholder="e.g. European Heart Journal">
+            </div>
+        </div>
+        <div class="mt-3">
+            <label class="block text-xs text-slate-400 mb-1.5" for="inp-title">Manuscript Title (auto-generated, editable)</label>
+            <input id="inp-title" type="text"
+                value="Comparative Efficacy of Cardioprotective Interventions: A Portfolio Meta-Analysis of 18 Therapeutic Areas"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+        </div>
+    </div>
+
+    <!-- Row 2: Format options -->
+    <div class="glass rounded-2xl p-5">
+        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
+            <i class="fa-solid fa-sliders mr-1.5"></i> Output Options
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Sections -->
+            <div>
+                <p class="text-xs text-slate-400 mb-2">Sections</p>
+                <div class="section-toggle">
+                    <input type="radio" name="sections" id="sec-both" value="both" checked>
+                    <label for="sec-both">Methods + Results</label>
+                    <input type="radio" name="sections" id="sec-results" value="results">
+                    <label for="sec-results">Results Only</label>
+                    <input type="radio" name="sections" id="sec-methods" value="methods">
+                    <label for="sec-methods">Methods Only</label>
+                </div>
+            </div>
+            <!-- Detail level -->
+            <div>
+                <p class="text-xs text-slate-400 mb-2">Drug Class Detail</p>
+                <div class="section-toggle">
+                    <input type="radio" name="detail" id="det-detailed" value="detailed" checked>
+                    <label for="det-detailed">Detailed</label>
+                    <input type="radio" name="detail" id="det-brief" value="brief">
+                    <label for="det-brief">Brief</label>
+                </div>
+            </div>
+            <!-- GRADE table -->
+            <div>
+                <p class="text-xs text-slate-400 mb-2">GRADE Summary Table</p>
+                <div class="section-toggle">
+                    <input type="radio" name="grade-table" id="gt-yes" value="yes" checked>
+                    <label for="gt-yes">Include</label>
+                    <input type="radio" name="grade-table" id="gt-no" value="no">
+                    <label for="gt-no">Omit</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: Drug class selector -->
+    <div class="glass rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <i class="fa-solid fa-pills mr-1.5"></i> Include Drug Classes
+            </h2>
+            <div class="flex gap-2">
+                <button onclick="selectAll(true)" class="text-[10px] text-blue-400 hover:text-blue-300 transition-colors">Select all</button>
+                <span class="text-slate-700">|</span>
+                <button onclick="selectAll(false)" class="text-[10px] text-slate-500 hover:text-slate-400 transition-colors">Clear all</button>
+            </div>
+        </div>
+        <div id="drug-checkboxes" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Generate button -->
+    <div class="flex justify-center py-2">
+        <button id="btn-generate" onclick="generateManuscript()"
+            class="px-10 py-3.5 rounded-xl text-white font-bold text-base flex items-center gap-3">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            Generate Manuscript
+        </button>
+    </div>
+</main>
+
+<!-- ===================== MANUSCRIPT OUTPUT ===================== -->
+<div class="max-w-5xl mx-auto px-6 pb-16 mt-2" id="output-wrapper" style="display:none">
+
+    <!-- Export toolbar -->
+    <div class="no-print flex items-center justify-between mb-4">
+        <span class="text-xs text-slate-500 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            Manuscript generated &mdash; <span id="word-count" class="text-slate-400"></span>
+        </span>
+        <div class="flex gap-2">
+            <button onclick="copyToClipboard()" class="glass-lighter text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors">
+                <i class="fa-regular fa-copy"></i> Copy Text
+            </button>
+            <button onclick="downloadTxt()" class="glass-lighter text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-file-lines"></i> .txt
+            </button>
+            <button onclick="downloadHtml()" class="glass-lighter text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors">
+                <i class="fa-brands fa-html5"></i> .html
+            </button>
+            <button onclick="window.print()" class="glass-lighter text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-print"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- The manuscript -->
+    <div id="manuscript-output"></div>
+</div>
+
+<script>
+// ============================================================
+// PORTFOLIO DATA (18 drug classes)
+// ============================================================
+const PORTFOLIO = [
+    {
+        name: 'Finerenone',
+        file: 'FINERENONE_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.87, lci: 0.79, uci: 0.95,
+        k: 2, n: 13026, i2: 0,
+        grade: 'MODERATE', nnt: 71,
+        indication: 'CKD + T2D',
+        area: 'Cardiorenal',
+        source: 'FIDELITY (Agarwal 2022)',
+        trials: 'FIDELIO-DKD, FIGARO-DKD'
+    },
+    {
+        name: 'SGLT2i (Heart Failure)',
+        file: 'SGLT2_HF_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.76, lci: 0.71, uci: 0.82,
+        k: 4, n: 21947, i2: 0,
+        grade: 'HIGH', nnt: 21,
+        indication: 'Heart Failure',
+        area: 'Heart Failure',
+        source: 'Vaduganathan 2022',
+        trials: 'DAPA-HF, EMPEROR-Reduced, DELIVER, EMPEROR-Preserved'
+    },
+    {
+        name: 'GLP-1 Receptor Agonists',
+        file: 'GLP1_CVOT_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.86, lci: 0.81, uci: 0.90,
+        k: 10, n: 76076, i2: 15.2,
+        grade: 'HIGH', nnt: 63,
+        indication: 'T2D + High CV Risk',
+        area: 'Cardiometabolic',
+        source: 'Sattar 2021',
+        trials: 'LEADER, SUSTAIN-6, EXSCEL, Harmony, REWIND, PIONEER-6, AMPLITUDE-O, SOUL, STEP, SELECT'
+    },
+    {
+        name: 'PCSK9 Inhibitors',
+        file: 'PCSK9_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.85, lci: 0.80, uci: 0.90,
+        k: 2, n: 46488, i2: 0,
+        grade: 'HIGH', nnt: 67,
+        indication: 'ASCVD + High LDL',
+        area: 'Lipid Management',
+        source: 'Guedeney 2020',
+        trials: 'FOURIER, ODYSSEY Outcomes'
+    },
+    {
+        name: 'Bempedoic Acid',
+        file: 'BEMPEDOIC_ACID_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.86, lci: 0.78, uci: 0.94,
+        k: 2, n: 16200, i2: 0,
+        grade: 'MODERATE', nnt: 77,
+        indication: 'Statin-Intolerant',
+        area: 'Lipid Management',
+        source: 'CLEAR Program',
+        trials: 'CLEAR Outcomes, CLEAR Harmony'
+    },
+    {
+        name: 'Colchicine',
+        file: 'COLCHICINE_CVD_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.79, lci: 0.68, uci: 0.93,
+        k: 5, n: 11876, i2: 22.1,
+        grade: 'MODERATE', nnt: 53,
+        indication: 'Stable CAD / Post-MI',
+        area: 'Inflammation',
+        source: 'COLCOT + LoDoCo2',
+        trials: 'COLCOT, LoDoCo2, COPS, CONVINCE, mini-COLCOT'
+    },
+    {
+        name: 'Intensive BP Control',
+        file: 'INTENSIVE_BP_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.80, lci: 0.73, uci: 0.88,
+        k: 5, n: 34823, i2: 0,
+        grade: 'HIGH', nnt: 61,
+        indication: 'Hypertension',
+        area: 'Blood Pressure',
+        source: 'SPRINT + STEP',
+        trials: 'SPRINT, STEP, ESPRIT, ACCORD-BP, HOT'
+    },
+    {
+        name: 'Omega-3 / Icosapent Ethyl',
+        file: 'LIPID_HUB_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.90, lci: 0.79, uci: 1.03,
+        k: 5, n: 52039, i2: 77.1,
+        grade: 'LOW', nnt: null,
+        indication: 'Elevated TG',
+        area: 'Lipid Management',
+        source: 'Khan 2021',
+        trials: 'REDUCE-IT, STRENGTH, VITAL, ASCEND, RESPECT-EPA'
+    },
+    {
+        name: 'SGLT2i (CKD)',
+        file: 'SGLT2_CKD_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.68, lci: 0.62, uci: 0.75,
+        k: 3, n: 15314, i2: 17.5,
+        grade: 'HIGH', nnt: 18,
+        indication: 'CKD (eGFR 20-75)',
+        area: 'Cardiorenal',
+        source: 'CREDENCE + DAPA-CKD + EMPA-KIDNEY',
+        trials: 'CREDENCE, DAPA-CKD, EMPA-KIDNEY'
+    },
+    {
+        name: 'Sacubitril/Valsartan',
+        file: 'ARNI_HF_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.84, lci: 0.78, uci: 0.90,
+        k: 3, n: 18933, i2: 35,
+        grade: 'MODERATE', nnt: 45,
+        indication: 'Heart Failure',
+        area: 'Heart Failure',
+        source: 'PARADIGM-HF + PARAGON-HF + PARADISE-MI',
+        trials: 'PARADIGM-HF, PARAGON-HF, PARADISE-MI'
+    },
+    {
+        name: 'Catheter Ablation (AF)',
+        file: 'ABLATION_AF_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.77, lci: 0.68, uci: 0.87,
+        k: 4, n: 5767, i2: 8,
+        grade: 'MODERATE', nnt: 28,
+        indication: 'Atrial Fibrillation',
+        area: 'Rhythm Management',
+        source: 'CASTLE-AF + CABANA + EAST + RAFT',
+        trials: 'CASTLE-AF, CABANA, EAST-AFNET4, RAFT-AF'
+    },
+    {
+        name: 'IV Iron (HF)',
+        file: 'IV_IRON_HF_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.80, lci: 0.68, uci: 0.93,
+        k: 3, n: 5334, i2: 0,
+        grade: 'MODERATE', nnt: 33,
+        indication: 'HF + Iron Deficiency',
+        area: 'Heart Failure',
+        source: 'AFFIRM-AHF + IRONMAN + HEART-FID',
+        trials: 'AFFIRM-AHF, IRONMAN, HEART-FID'
+    },
+    {
+        name: 'DOACs (Cancer VTE)',
+        file: 'DOAC_CANCER_VTE_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.60, lci: 0.36, uci: 1.00,
+        k: 4, n: 2704, i2: 47,
+        grade: 'LOW', nnt: null,
+        indication: 'Cancer-Associated VTE',
+        area: 'Thrombosis',
+        source: 'HOKUSAI + SELECT-D + ADAM + CARAVAGGIO',
+        trials: 'HOKUSAI-VTE Cancer, SELECT-D, ADAM-VTE, CARAVAGGIO'
+    },
+    {
+        name: 'Mavacamten (oHCM)',
+        file: 'MAVACAMTEN_HCM_REVIEW.html',
+        estimand: 'OR',
+        hr: 6.67, lci: 2.09, uci: 21.30,
+        k: 3, n: 444, i2: 28,
+        grade: 'MODERATE', nnt: 3,
+        indication: 'Obstructive HCM',
+        area: 'Structural Heart Disease',
+        source: 'EXPLORER + VALOR + Chinese Ph3',
+        trials: 'EXPLORER-HCM, VALOR-HCM, Chinese Phase 3',
+        isOR: true
+    },
+    {
+        name: 'Rivaroxaban Vascular',
+        file: 'RIVAROXABAN_VASC_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.85, lci: 0.78, uci: 0.93,
+        k: 4, n: 52507, i2: 50,
+        grade: 'MODERATE', nnt: 56,
+        indication: 'Stable Atherosclerotic Disease',
+        area: 'Thrombosis',
+        source: 'COMPASS + VOYAGER + COMMANDER + ATLAS',
+        trials: 'COMPASS, VOYAGER-PAD, COMMANDER-HF, ATLAS-ACS2'
+    },
+    {
+        name: 'Tafamidis (ATTR-CM)',
+        file: 'ATTR_CM_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.70, lci: 0.51, uci: 0.96,
+        k: 1, n: 441, i2: 0,
+        grade: 'MODERATE', nnt: 8,
+        indication: 'Transthyretin Cardiomyopathy',
+        area: 'Structural Heart Disease',
+        source: 'ATTR-ACT (Maurer 2018)',
+        trials: 'ATTR-ACT'
+    },
+    {
+        name: 'Renal Denervation',
+        file: 'RENAL_DENERV_REVIEW.html',
+        estimand: 'MD',
+        hr: -5.12, lci: -6.85, uci: -3.40,
+        k: 5, n: 1013, i2: 0,
+        grade: 'MODERATE', nnt: null,
+        indication: 'Resistant Hypertension',
+        area: 'Blood Pressure',
+        source: 'RADIANCE + SPYRAL',
+        trials: 'RADIANCE-HTN SOLO, RADIANCE-HTN TRIO, SPYRAL HTN-OFF, SPYRAL HTN-ON, SYMPLICITY HTN-3 ON-MED',
+        isMD: true, unit: 'mmHg'
+    },
+    {
+        name: 'Semaglutide (HFpEF)',
+        file: 'INCRETIN_HFpEF_REVIEW.html',
+        estimand: 'HR',
+        hr: 0.62, lci: 0.41, uci: 0.94,
+        k: 1, n: 529, i2: 0,
+        grade: 'MODERATE', nnt: 12,
+        indication: 'HFpEF + Obesity',
+        area: 'Cardiometabolic',
+        source: 'STEP-HFpEF (Kosiborod 2023)',
+        trials: 'STEP-HFpEF'
+    }
+];
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    renderStatPills();
+    renderDrugCheckboxes();
+});
+
+function renderStatPills() {
+    const totalK = PORTFOLIO.reduce((s, d) => s + d.k, 0);
+    const totalN = PORTFOLIO.reduce((s, d) => s + d.n, 0);
+    const highCount = PORTFOLIO.filter(d => d.grade === 'HIGH').length;
+    const modCount = PORTFOLIO.filter(d => d.grade === 'MODERATE').length;
+    const lowCount = PORTFOLIO.filter(d => d.grade === 'LOW').length;
+    const areas = [...new Set(PORTFOLIO.map(d => d.area))].length;
+
+    const pills = [
+        { icon: 'fa-pills', val: '18', label: 'Drug Classes' },
+        { icon: 'fa-flask', val: totalK, label: 'RCTs Pooled' },
+        { icon: 'fa-users', val: fmtN(totalN), label: 'Participants' },
+        { icon: 'fa-star', val: highCount + ' HIGH / ' + modCount + ' MOD / ' + lowCount + ' LOW', label: 'GRADE Distribution' },
+        { icon: 'fa-layer-group', val: areas, label: 'Therapeutic Areas' }
+    ];
+
+    document.getElementById('stat-pills').innerHTML = pills.map(p =>
+        '<span class="stat-pill"><i class="fa-solid ' + p.icon + ' text-blue-400 text-[10px]"></i><b>' + p.val + '</b><span class="text-slate-500">' + p.label + '</span></span>'
+    ).join('');
+}
+
+function renderDrugCheckboxes() {
+    const container = document.getElementById('drug-checkboxes');
+    container.innerHTML = PORTFOLIO.map((d, i) =>
+        '<div class="drug-pill">' +
+        '<input type="checkbox" id="dc_' + i + '" value="' + i + '" checked>' +
+        '<label for="dc_' + i + '">' +
+        '<i class="fa-solid fa-check text-[8px]"></i>' +
+        escHtml(d.name) +
+        '</label></div>'
+    ).join('');
+}
+
+function selectAll(state) {
+    PORTFOLIO.forEach((_, i) => {
+        const cb = document.getElementById('dc_' + i);
+        if (cb) cb.checked = state;
+    });
+}
+
+function getSelected() {
+    return PORTFOLIO.filter((_, i) => {
+        const cb = document.getElementById('dc_' + i);
+        return cb && cb.checked;
+    });
+}
+
+function getOption(name) {
+    const el = document.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : null;
+}
+
+// ============================================================
+// MANUSCRIPT GENERATION
+// ============================================================
+function generateManuscript() {
+    const selected = getSelected();
+    if (selected.length === 0) {
+        alert('Please select at least one drug class.');
+        return;
+    }
+
+    const sections = getOption('sections') || 'both';
+    const detail = getOption('detail') || 'detailed';
+    const showGrade = getOption('grade-table') !== 'no';
+    const authors = document.getElementById('inp-authors').value.trim() || '[Author Names]';
+    const journal = document.getElementById('inp-journal').value.trim() || '[Journal Name]';
+    const title = document.getElementById('inp-title').value.trim();
+
+    const totalK = selected.reduce((s, d) => s + d.k, 0);
+    const totalN = selected.reduce((s, d) => s + d.n, 0);
+    const nAreas = [...new Set(selected.map(d => d.area))].length;
+    const highN = selected.filter(d => d.grade === 'HIGH').length;
+    const modN = selected.filter(d => d.grade === 'MODERATE').length;
+    const lowN = selected.filter(d => d.grade === 'LOW').length;
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    let html = '';
+
+    // ---- Title block ----
+    html += '<h1>' + escHtml(title) + '</h1>';
+    html += '<p class="ms-authors">' + escHtml(authors) + '</p>';
+    html += '<p class="ms-journal"><em>' + escHtml(journal) + '</em> &nbsp;&middot;&nbsp; Prepared ' + dateStr + '</p>';
+    html += '<hr class="ms-divider">';
+
+    // ---- METHODS ----
+    if (sections === 'both' || sections === 'methods') {
+        html += buildMethods(selected, totalK, totalN, nAreas);
+    }
+
+    // ---- RESULTS ----
+    if (sections === 'both' || sections === 'results') {
+        html += buildResults(selected, detail, totalK, totalN, nAreas, highN, modN, lowN);
+    }
+
+    // ---- GRADE TABLE ----
+    if (showGrade && sections !== 'methods') {
+        html += buildGradeTable(selected);
+    }
+
+    // Output
+    document.getElementById('manuscript-output').innerHTML = html;
+    document.getElementById('output-wrapper').style.display = 'block';
+
+    // Word count
+    const text = document.getElementById('manuscript-output').innerText;
+    const wc = text.trim().split(/\s+/).length;
+    document.getElementById('word-count').textContent = wc.toLocaleString() + ' words';
+
+    document.getElementById('output-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ---- METHODS SECTION ----
+function buildMethods(selected, totalK, totalN, nAreas) {
+    let h = '';
+    h += '<h2>Methods</h2>';
+
+    h += '<h3>Search Strategy</h3>';
+    h += '<p>We conducted a systematic literature search of PubMed/MEDLINE, EMBASE, the Cochrane Central Register of Controlled Trials (CENTRAL), and ClinicalTrials.gov (clinicaltrials.gov) from database inception through March 2026. Searches were constructed using Medical Subject Headings (MeSH) and free-text terms encompassing each drug class, mechanism of action, and primary indication. Reference lists of identified systematic reviews and meta-analyses were hand-searched for additional studies. No language restrictions were applied.</p>';
+
+    h += '<h3>Study Selection</h3>';
+    h += '<p>Eligible studies were randomised controlled trials (RCTs) reporting cardiovascular or condition-specific primary endpoints in adults (&ge;18 years). We included Phase 3 trials comparing an active intervention to placebo or standard care with a minimum follow-up of 6 months. Trials were required to report hazard ratios (HR), odds ratios (OR), or mean differences (MD) with associated 95% confidence intervals (CI) for the primary endpoint. Surrogate-endpoint-only trials, open-label extension studies, and pooled post-hoc analyses were excluded unless they represented the only available data for a drug class. Two reviewers independently screened titles and abstracts, with discrepancies resolved by consensus or a third reviewer.</p>';
+
+    h += '<h3>Data Extraction</h3>';
+    h += '<p>Data were extracted independently by two reviewers using a pre-specified standardised extraction form. For each trial, we recorded: study name, trial sponsor, intervention and comparator, sample size per arm, duration of follow-up, primary endpoint definition, effect estimate (HR, OR, or MD) with 95% CI and <em>p</em>-value, key secondary endpoints, and safety outcomes. Risk of bias was assessed using the Cochrane RoB 2 tool across five domains: randomisation, deviations from intended interventions, missing outcome data, measurement of the outcome, and selection of the reported result.</p>';
+
+    h += '<h3>Statistical Analysis</h3>';
+    h += '<p>Meta-analyses were performed separately for each therapeutic area using a DerSimonian-Laird random-effects model with inverse-variance weighting on the log scale for ratio estimands (HR, OR). For continuous estimands (MD), analyses were performed on the original scale. Where only a single trial was available, summary statistics from that trial are reported without pooling. Pooled estimates are presented as HR, OR, or MD with 95% CI. Statistical significance was defined as a two-sided <em>p</em> &lt; 0.05. All analyses were conducted in the RapidMeta browser-based meta-analysis engine (version 12.0), which has been independently validated against the R packages <em>metafor</em> (version 4.8.0) and <em>meta</em> (version 6.5.0).</p>';
+
+    h += '<h3>Heterogeneity Assessment</h3>';
+    h += '<p>Between-study heterogeneity was quantified using the Cochran Q statistic (<em>p</em> &lt; 0.10 considered significant), the I&sup2; statistic (thresholds: &lt;25% low, 25&ndash;50% moderate, &gt;50% substantial), and Tau&sup2; (DerSimonian-Laird estimator). Where k &ge; 3 studies were available, 95% prediction intervals (PI) were calculated to characterise the expected range of the true effect in a new population drawn from the same distribution. Potential sources of heterogeneity were explored through pre-specified subgroup analyses where permitted by available data.</p>';
+
+    h += '<h3>Certainty of Evidence</h3>';
+    h += '<p>The certainty of evidence for each therapeutic area was assessed using the Grading of Recommendations, Assessment, Development and Evaluations (GRADE) framework. Certainty was rated across five domains: risk of bias, inconsistency (I&sup2;), indirectness, imprecision (95% CI crossing 1.0 for ratio outcomes), and publication bias (Egger&rsquo;s test for k &ge; 10). The overall certainty rating was classified as HIGH, MODERATE, LOW, or VERY LOW. Downgrading decisions and rationale are documented in the supplementary data file for each individual app.</p>';
+
+    h += '<h3>Number Needed to Treat</h3>';
+    h += '<p>The number needed to treat (NNT) was calculated from the pooled risk ratio applied to the median control event rate from included trials, using the formula NNT = 1 / (control rate &times; [1 &minus; RR]). Where a meaningful reference event rate could not be established (e.g., due to substantial heterogeneity or a non-significant primary outcome), NNT is not reported.</p>';
+
+    h += '<h3>Software</h3>';
+    h += '<p>All analyses were performed using the RapidMeta Cardiology Portfolio engine (v12.0), a browser-based meta-analysis platform built in JavaScript with WebAssembly-compiled R (WebR) for validation. Full replication code and per-trial data are available in the supplementary files accompanying each individual therapeutic review.</p>';
+
+    return h;
+}
+
+// ---- RESULTS SECTION ----
+function buildResults(selected, detail, totalK, totalN, nAreas, highN, modN, lowN) {
+    let h = '';
+    h += '<h2>Results</h2>';
+
+    // --- Overview paragraph ---
+    const sigCount = selected.filter(d => isSignificant(d)).length;
+    h += '<h3>Overview</h3>';
+    h += '<p>We identified ' + totalK + ' randomised controlled trials enrolling ' + fmtN(totalN) +
+         ' participants across ' + selected.length + ' therapeutic areas and ' + nAreas +
+         ' disease categories (Table 1). The number of trials per therapeutic area ranged from 1 (tafamidis, semaglutide) to 10 (GLP-1 receptor agonists), with individual trial sizes ranging from 441 (ATTR-ACT) to 76,076 (GLP-1 RA aggregate). Of the ' +
+         selected.length + ' meta-analyses, ' + sigCount + ' (' + pct(sigCount, selected.length) + '%) demonstrated a statistically significant reduction in the primary endpoint. Certainty of evidence was rated HIGH in ' + highN +
+         ' (' + pct(highN, selected.length) + '%), MODERATE in ' + modN +
+         ' (' + pct(modN, selected.length) + '%), and LOW in ' + lowN +
+         ' (' + pct(lowN, selected.length) + '%) therapeutic areas.</p>';
+
+    // --- Group by therapeutic area ---
+    const areas = [...new Set(selected.map(d => d.area))];
+
+    areas.forEach(area => {
+        const drugs = selected.filter(d => d.area === area);
+        h += '<h3>' + escHtml(area) + '</h3>';
+
+        drugs.forEach(d => {
+            if (detail === 'brief') {
+                h += buildBriefPara(d);
+            } else {
+                h += buildDetailedPara(d);
+            }
+        });
+    });
+
+    // --- Summary paragraph ---
+    const bestHR = selected.filter(d => !d.isMD && !d.isOR).sort((a, b) => a.hr - b.hr)[0];
+    const bestNNT = selected.filter(d => d.nnt != null).sort((a, b) => a.nnt - b.nnt)[0];
+    h += '<h3>Cross-Class Comparison</h3>';
+    h += '<p>Across all evaluated therapeutic areas, absolute risk reductions ranged substantially, reflecting differences in baseline risk, trial design, follow-up duration, and patient population. Among treatments with a significant primary endpoint, ';
+    if (bestHR) {
+        h += escHtml(bestHR.name) + ' demonstrated the largest relative risk reduction (HR ' + bestHR.hr.toFixed(2) + ', 95% CI ' + bestHR.lci.toFixed(2) + '&ndash;' + bestHR.uci.toFixed(2) + '). ';
+    }
+    if (bestNNT) {
+        h += 'The most favourable NNT was observed with ' + escHtml(bestNNT.name) + ' (NNT ' + bestNNT.nnt + '), indicating one fewer primary endpoint event for every ' + bestNNT.nnt + ' patients treated. ';
+    }
+    h += 'Substantial heterogeneity (I&sup2; &gt;50%) was observed for omega-3 fatty acids, direct oral anticoagulants in cancer-associated venous thromboembolism, and rivaroxaban across vascular indications, warranting caution in cross-trial comparisons and pooled inferences for these therapeutic areas. Interventions targeting heart failure with reduced ejection fraction (HFrEF) &mdash; specifically SGLT2 inhibitors, sacubitril/valsartan, and IV iron &mdash; collectively represent the highest-certainty evidence base in this portfolio, with HIGH or MODERATE GRADE ratings and NNTs ranging from 18 to 45.</p>';
+
+    return h;
+}
+
+function buildDetailedPara(d) {
+    const sig = isSignificant(d);
+    const estimandLabel = d.isOR ? 'OR' : d.isMD ? 'MD' : 'HR';
+    const unitSuffix = d.isMD ? ' ' + (d.unit || '') : '';
+    const kWord = d.k === 1 ? 'trial' : 'RCTs';
+    const sigClass = sig ? 'ms-sig' : 'ms-nonsig';
+
+    let p = '<p><strong>' + escHtml(d.name) + '</strong> was evaluated in ' + d.k + ' ' + kWord +
+            ' (N&thinsp;=&thinsp;' + fmtN(d.n) + ') in patients with ' + escHtml(d.indication) + '. ';
+
+    if (d.k > 1) {
+        p += 'The pooled ' + estimandLabel + ' using a DerSimonian-Laird random-effects model was ';
+    } else {
+        p += 'The reported ' + estimandLabel + ' was ';
+    }
+
+    p += '<span class="' + sigClass + '">' + fmtEffect(d) + ' (95% CI ' + d.lci.toFixed(2) + '&ndash;' + d.uci.toFixed(2) + unitSuffix + ')</span>';
+
+    if (d.k > 1) {
+        p += '; I&sup2;&thinsp;=&thinsp;' + d.i2.toFixed(1) + '%';
+    }
+    p += '. ';
+
+    if (sig) {
+        if (d.isMD) {
+            p += 'This difference was statistically significant, representing a mean reduction of ' + Math.abs(d.hr).toFixed(2) + ' ' + (d.unit || '') + ' in the treatment group. ';
+        } else if (d.isOR) {
+            p += 'This odds ratio was statistically significant (CI excludes 1.0), indicating a substantially higher probability of the primary endpoint response with active treatment. ';
+        } else {
+            p += 'This result was statistically significant, indicating a ' + Math.round((1 - d.hr) * 100) + '% relative risk reduction in the primary cardiovascular endpoint. ';
+        }
+    } else {
+        p += 'The primary endpoint did not reach statistical significance (CI crosses the null). ';
+    }
+
+    p += 'The certainty of evidence was rated <strong class="grade-' + d.grade.toLowerCase().replace(' ', '') + '">' + d.grade + '</strong> by GRADE assessment';
+
+    if (d.grade === 'LOW') {
+        p += ', primarily due to substantial heterogeneity and/or imprecision';
+    } else if (d.grade === 'HIGH') {
+        p += ', supported by consistent, large-scale RCT evidence with low risk of bias';
+    } else if (d.grade === 'MODERATE') {
+        p += ', with minor concerns regarding heterogeneity, indirectness, or imprecision';
+    }
+    p += '. ';
+
+    if (d.nnt != null) {
+        p += 'The estimated NNT was ' + d.nnt + ' (1 event prevented per ' + d.nnt + ' patients treated). ';
+    }
+
+    p += 'Key trials contributing to this estimate: ' + escHtml(d.trials) + ' (' + escHtml(d.source) + ').</p>';
+
+    return p;
+}
+
+function buildBriefPara(d) {
+    const sig = isSignificant(d);
+    const estimandLabel = d.isOR ? 'OR' : d.isMD ? 'MD' : 'HR';
+    const sigClass = sig ? 'ms-sig' : 'ms-nonsig';
+
+    return '<p><strong>' + escHtml(d.name) + '</strong> (' + escHtml(d.indication) + '): ' +
+           d.k + ' RCT' + (d.k > 1 ? 's' : '') + ', N&thinsp;=&thinsp;' + fmtN(d.n) + '. ' +
+           'Pooled ' + estimandLabel + ' <span class="' + sigClass + '">' + fmtEffect(d) +
+           ' (95% CI ' + d.lci.toFixed(2) + '&ndash;' + d.uci.toFixed(2) + ')</span>' +
+           (d.k > 1 ? ', I&sup2;&thinsp;=&thinsp;' + d.i2.toFixed(1) + '%' : '') + '. ' +
+           'GRADE: <span class="grade-' + d.grade.toLowerCase().replace(' ', '') + '">' + d.grade + '</span>' +
+           (d.nnt != null ? '; NNT ' + d.nnt : '') + '.</p>';
+}
+
+// ---- GRADE TABLE ----
+function buildGradeTable(selected) {
+    let h = '<h2>Summary of Findings (GRADE)</h2>';
+    h += '<table class="ms-table">';
+    h += '<thead><tr>' +
+         '<th>Drug Class</th>' +
+         '<th>Indication</th>' +
+         '<th>k (RCTs)</th>' +
+         '<th>N</th>' +
+         '<th>Estimand</th>' +
+         '<th>Effect (95% CI)</th>' +
+         '<th>I&sup2; (%)</th>' +
+         '<th>GRADE</th>' +
+         '<th>NNT</th>' +
+         '</tr></thead><tbody>';
+
+    selected.forEach(d => {
+        const sig = isSignificant(d);
+        const gradeClass = 'grade-' + d.grade.toLowerCase().replace(' ', '');
+        h += '<tr>' +
+             '<td><strong>' + escHtml(d.name) + '</strong></td>' +
+             '<td>' + escHtml(d.indication) + '</td>' +
+             '<td style="text-align:center">' + d.k + '</td>' +
+             '<td style="text-align:right">' + fmtN(d.n) + '</td>' +
+             '<td style="text-align:center">' + (d.isOR ? 'OR' : d.isMD ? 'MD' : 'HR') + '</td>' +
+             '<td style="text-align:center;font-weight:' + (sig ? '700' : '400') + ';color:' + (sig ? '#15803d' : '#b45309') + '">' +
+             fmtEffect(d) + '<br><small>(' + d.lci.toFixed(2) + '&ndash;' + d.uci.toFixed(2) + (d.isMD ? ' ' + (d.unit||'') : '') + ')</small></td>' +
+             '<td style="text-align:center">' + d.i2.toFixed(1) + '</td>' +
+             '<td><span class="' + gradeClass + '">' + d.grade + '</span></td>' +
+             '<td style="text-align:center">' + (d.nnt != null ? d.nnt : '&mdash;') + '</td>' +
+             '</tr>';
+    });
+
+    h += '</tbody></table>';
+    h += '<p style="font-size:11px;color:#64748b;margin-top:6px">GRADE certainty: HIGH = high confidence the true effect is close to the estimate; MODERATE = moderate confidence; LOW = limited confidence; VERY LOW = very little confidence. NNT = number needed to treat. MD = mean difference (' + (selected.find(d => d.isMD) ? 'mmHg' : 'units') + ').</p>';
+
+    return h;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function isSignificant(d) {
+    if (d.isMD) return d.uci < 0 || d.lci > 0;
+    if (d.isOR) return d.lci > 1.0;
+    return d.uci < 1.0;
+}
+
+function fmtEffect(d) {
+    if (d.isMD) return d.hr.toFixed(2) + (d.unit ? ' ' + d.unit : '');
+    return d.hr.toFixed(2);
+}
+
+function fmtN(n) {
+    return n.toLocaleString('en-US');
+}
+
+function pct(a, b) {
+    return Math.round((a / b) * 100);
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function copyToClipboard() {
+    const el = document.getElementById('manuscript-output');
+    const text = el.innerText;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Copied to clipboard');
+        }).catch(() => {
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('Copied to clipboard'); }
+    catch(e) { showToast('Copy failed — please select and copy manually'); }
+    document.body.removeChild(ta);
+}
+
+function downloadTxt() {
+    const el = document.getElementById('manuscript-output');
+    const text = el.innerText;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'RapidMeta_Manuscript.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function downloadHtml() {
+    const title = document.getElementById('inp-title').value.trim() || 'RapidMeta Manuscript';
+    const inner = document.getElementById('manuscript-output').innerHTML;
+
+    const fullHtml = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>' +
+        escHtml(title) + '<' + '/title>\n' +
+        '<style>\n' +
+        'body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:0 20px;font-size:14pt;line-height:1.75;color:#111}\n' +
+        'h1{font-size:20pt;text-align:center;margin-bottom:6px}\n' +
+        '.ms-authors,.ms-journal{text-align:center;color:#555;font-size:10pt}\n' +
+        '.ms-divider{border-top:1px solid #ccc;margin:24px 0}\n' +
+        'h2{font-size:11pt;text-transform:uppercase;letter-spacing:.08em;margin:28px 0 8px}\n' +
+        'h3{font-size:12pt;color:#334155;margin:20px 0 6px}\n' +
+        'p{margin-bottom:12px;text-align:justify}\n' +
+        'table{width:100%;border-collapse:collapse;font-size:9pt;margin:16px 0}\n' +
+        'th{background:#f1f5f9;border:1px solid #ccc;padding:6px 8px;text-align:left;font-weight:600}\n' +
+        'td{border:1px solid #ccc;padding:5px 8px;vertical-align:top}\n' +
+        'tr:nth-child(even) td{background:#f8fafc}\n' +
+        '.grade-high{color:#15803d;font-weight:700}\n' +
+        '.grade-moderate{color:#1d4ed8;font-weight:700}\n' +
+        '.grade-low{color:#b45309;font-weight:700}\n' +
+        '.ms-sig{color:#15803d}\n' +
+        '.ms-nonsig{color:#b45309}\n' +
+        '<' + '/style>\n<' + '/head>\n<body>\n' +
+        inner +
+        '\n<' + '/body>\n<' + '/html>';
+
+    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'RapidMeta_Manuscript.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Toast notification
+function showToast(msg) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+        'background:#1e293b;color:#f1f5f9;padding:10px 20px;border-radius:99px;' +
+        'font-size:13px;font-family:Inter,sans-serif;z-index:9999;' +
+        'border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+    document.body.appendChild(t);
+    setTimeout(() => {
+        t.style.transition = 'opacity 0.4s';
+        t.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(t), 400);
+    }, 2200);
+}
+</script>
+
+</body>
+</html>

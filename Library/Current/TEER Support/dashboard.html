@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tricuspid TEER Living Meta-Analysis</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-statistics@7.8.0/dist/simple-statistics.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
+        .header { background-color: #005eb8; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        h2 { color: #005eb8; border-bottom: 2px solid #005eb8; padding-bottom: 10px; }
+        .stat-val { font-size: 2.5em; font-weight: bold; color: #005eb8; }
+        .stat-label { font-size: 1.1em; color: #666; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+        .filter-box { margin-bottom: 15px; }
+        input[type="text"] { padding: 8px; width: 250px; border: 1px solid #ccc; border-radius: 4px; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.85em; margin-right: 5px; background: #e1f5fe; color: #01579b; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Tricuspid TEER Living Meta-Analysis</h1>
+    <p>Automated Screening & Extraction Dashboard | Updated: <span id="last-update"></span></p>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <div class="stat-label">Total Studies Identified</div>
+        <div id="total-studies" class="stat-val">0</div>
+    </div>
+    <div class="card">
+        <div class="stat-label">Total Patients (N)</div>
+        <div id="total-n" class="stat-val">0</div>
+    </div>
+    <div class="card">
+        <div class="stat-label">Mean TR Reduction</div>
+        <div id="mean-reduction" class="stat-val">0%</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Evidence Map: Forest Plot (Proportion TR ≤ 2+)</h2>
+    <div id="forest-plot" style="height: 400px;"></div>
+</div>
+
+<div class="card">
+    <h2>Extracted Study Data</h2>
+    <div class="filter-box">
+        <input type="text" id="studySearch" placeholder="Filter by author, device, or regex..." onkeyup="filterTable()">
+    </div>
+    <table id="studyTable">
+        <thead>
+            <tr>
+                <th>Study (Author, Year)</th>
+                <th>Device</th>
+                <th>N</th>
+                <th>TR ≤ 2+ (Pre)</th>
+                <th>TR ≤ 2+ (Post)</th>
+                <th>Success Rate</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Data will be injected here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Placeholder for extracted data (will be populated by the R/Python script)
+    const rawData = [
+        { id: 1, author: "Sorajja et al.", year: 2023, title: "TRILUMINATE Pivotal Trial", device: "TriClip", n: 175, tr_pre: 0.02, tr_post: 0.87, success: 0.98 },
+        { id: 2, author: "Kodali et al.", year: 2021, title: "CLASP TR Study", device: "PASCAL", n: 65, tr_pre: 0.01, tr_post: 0.70, success: 0.95 },
+        { id: 3, author: "Nickenig et al.", year: 2021, title: "TriClip bRIGHT Study", device: "TriClip", n: 200, tr_pre: 0.05, tr_post: 0.75, success: 0.99 },
+        { id: 4, author: "Lurz et al.", year: 2023, title: "TRILUMINATE EU", device: "TriClip", n: 120, tr_pre: 0.03, tr_post: 0.82, success: 0.97 }
+    ];
+
+    function initDashboard() {
+        document.getElementById('last-update').innerText = new Date().toLocaleDateString();
+        updateStats();
+        renderTable(rawData);
+        renderForestPlot();
+    }
+
+    function updateStats() {
+        document.getElementById('total-studies').innerText = rawData.length;
+        const totalN = rawData.reduce((acc, curr) => acc + curr.n, 0);
+        document.getElementById('total-n').innerText = totalN.toLocaleString();
+        
+        const avgPost = (rawData.reduce((acc, curr) => acc + curr.tr_post, 0) / rawData.length * 100).toFixed(1);
+        document.getElementById('mean-reduction').innerText = avgPost + "%";
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = data.map(s => `
+            <tr>
+                <td><strong>${s.author}</strong> (${s.year})<br><small>${s.title}</small></td>
+                <td><span class="tag">${s.device}</span></td>
+                <td>${s.n}</td>
+                <td>${(s.tr_pre * 100).toFixed(0)}%</td>
+                <td>${(s.tr_post * 100).toFixed(0)}%</td>
+                <td>${(s.success * 100).toFixed(0)}%</td>
+            </tr>
+        `).join('');
+    }
+
+    function renderForestPlot() {
+        const trace = {
+            x: rawData.map(s => s.tr_post),
+            y: rawData.map(s => s.author),
+            mode: 'markers',
+            type: 'scatter',
+            error_x: {
+                type: 'data',
+                array: rawData.map(s => Math.sqrt((s.tr_post * (1 - s.tr_post)) / s.n) * 1.96),
+                visible: true,
+                color: '#005eb8'
+            },
+            marker: { color: '#005eb8', size: 10 }
+        };
+
+        const layout = {
+            title: 'Proportion of Patients with TR ≤ 2+ Post-Procedure',
+            xaxis: { title: 'Proportion', range: [0, 1] },
+            yaxis: { autorange: 'reversed' },
+            margin: { l: 150, r: 50, t: 50, b: 50 }
+        };
+
+        Plotly.newPlot('forest-plot', [trace], layout);
+    }
+
+    function filterTable() {
+        const input = document.getElementById('studySearch');
+        const filter = input.value.toUpperCase();
+        const rows = document.getElementById('tableBody').getElementsByTagName('tr');
+
+        for (let i = 0; i < rows.length; i++) {
+            const text = rows[i].textContent || rows[i].innerText;
+            rows[i].style.display = text.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        }
+    }
+
+    window.onload = initDashboard;
+</script>
+
+</body>
+</html>

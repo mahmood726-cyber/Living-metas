@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RapidMeta Cardiology | Cryoballoon Ablation in AF vNext</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.plot.ly https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://clinicaltrials.gov https://www.ebi.ac.uk https://api.openalex.org http://localhost:8765; img-src 'self' data: blob:;">
+
+    <!-- Dependencies -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root { --bg-dark: #020617; --accent: #3b82f6; --surface: #0f172a; --surface-raised: #1e293b; --text-main: #f1f5f9; }
+        
+        body.light-mode { 
+            --bg-dark: #f8fafc; --accent: #2563eb; --surface: #ffffff; --surface-raised: #f1f5f9; --text-main: #0f172a; 
+            background-color: var(--bg-dark); color: var(--text-main);
+        }
+        
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .light-mode .glass { background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0,0,0,0.1); }
+        
+        .tab-active { color: var(--accent); }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .r-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; font-weight: bold; text-transform: uppercase; }
+        .badge-search { background: #334155; color: #94a3b8; }
+        .badge-include { background: #065f46; color: #6ee7b7; }
+        .badge-exclude { background: #7f1d1d; color: #fca5a5; }
+        .badge-landmark { background: #1e3a5f; color: #93c5fd; border: 1px solid #3b82f6; }
+        .badge-reference { background: #2e1065; color: #c4b5fd; border: 1px solid #7c3aed; }
+        
+        .highlight-data { background: rgba(251, 191, 36, 0.35); color: #fbbf24; font-weight: 800; padding: 0 4px; border-radius: 4px; border: 1px solid rgba(251, 191, 36, 0.5); }
+        .code-block { font-family: 'JetBrains Mono', monospace; background: #000; color: #10b981; padding: 1.5rem; border-radius: 1rem; overflow-x: auto; border: 1px solid #1e293b; }
+        .light-mode .code-block { background: #f1f5f9; color: #065f46; border-color: #cbd5e1; }
+
+        .rob-circle { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin: 0 2px; border: 1px solid rgba(0,0,0,0.1); }
+        .rob-low { background-color: #22c55e; } 
+        .rob-some { background-color: #eab308; } 
+        .rob-high { background-color: #ef4444; } 
+        
+        .va-card { background: #fff; color: #000; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .va-header { background: #1e3a8a; color: #fff; padding: 2rem; text-align: center; }
+        /* ISSUE 1 FIX: Changed grid-template-cols to grid-template-columns */
+        .va-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .va-section { padding: 2rem; border-right: 1px solid #e2e8f0; }
+        .va-section:last-child { border-right: none; }
+        .va-label { font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+        .va-value { font-size: 1.25rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
+        .va-stat-main { font-size: 3.5rem; font-weight: 800; color: #1e40af; line-height: 1; }
+
+        .grade-badge { padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; }
+        .grade-high { background: #065f46; color: #6ee7b7; }
+        .grade-mod { background: #1e3a8a; color: #93c5fd; }
+        .grade-low { background: #78350f; color: #fcd34d; }
+        .grade-vlow { background: #7f1d1d; color: #fecaca; }
+        
+        .chart-container { height: 350px; width: 100%; border-radius: 1rem; background: rgba(0,0,0,0.2); padding: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        .light-mode .chart-container { background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); }
+        .chart-desc { font-size: 9px; color: #cbd5e1; margin-top: 4px; padding: 4px 8px; line-height: 1.4; max-height: 3.2em; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
+        .light-mode .chart-desc { color: #374151; }
+        .chart-header { display: flex; align-items: center; justify-content: space-between; }
+        .chart-dl-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 10px; padding: 2px 8px; border-radius: 4px; transition: all 0.2s; }
+        .chart-dl-btn:hover { color: #38bdf8; background: rgba(56,189,248,0.1); }
+
+        .prisma-node { border: 2px solid #334155; padding: 10px; border-radius: 8px; font-size: 10px; background: #0f172a; width: 140px; text-align: center; }
+        .light-mode .prisma-node { background: #fff; border-color: #cbd5e1; }
+
+        /* Extract View Toggle */
+        .extract-view-btn { background: transparent; color: #64748b; border-color: #334155; cursor: pointer; }
+        .extract-view-btn.active { background: rgba(59,130,246,0.15); color: #60a5fa; border-color: #3b82f6; }
+        .extract-card { background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 1.5rem; overflow: hidden; transition: border-color 0.2s; }
+        .extract-card:hover { border-color: #334155; }
+        .extract-card-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #1e293b; background: rgba(2, 6, 23, 0.4); }
+        .extract-card-body { padding: 1.5rem; }
+        .light-mode .extract-card { background: rgba(255,255,255,0.8); border-color: #e2e8f0; }
+        .light-mode .extract-card:hover { border-color: #cbd5e1; }
+        .light-mode .extract-card-header { background: rgba(241,245,249,0.6); border-color: #e2e8f0; }
+
+        /* Evidence panel */
+        .evidence-panel { background: rgba(2, 6, 23, 0.5); border: 1px solid #1e293b; border-radius: 1rem; padding: 1rem 1.25rem; margin-top: 0.5rem; }
+        .evidence-panel:hover { border-color: #334155; }
+        .evidence-label { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: #fbbf24; margin-bottom: 0.25rem; }
+        .evidence-source { font-size: 0.6rem; color: #64748b; font-style: italic; margin-bottom: 0.5rem; font-family: 'JetBrains Mono', monospace; }
+        .evidence-text { font-size: 0.75rem; color: #cbd5e1; line-height: 1.6; }
+        .evidence-panel-summary { border-color: rgba(59,130,246,0.35); background: rgba(30,58,138,0.12); }
+        .evidence-panel-locator { border-color: rgba(148,163,184,0.35); background: rgba(15,23,42,0.85); }
+        .evidence-panel-meta { border-color: rgba(251,191,36,0.28); background: rgba(51,65,85,0.28); }
+        .evidence-panel-locator .evidence-text { color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; }
+        .evidence-source-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .evidence-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.55rem; }
+        .evidence-action-btn { border: 1px solid #334155; border-radius: 0.55rem; padding: 0.2rem 0.45rem; background: rgba(2,6,23,0.4); color: #94a3b8; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s; }
+        .evidence-action-btn:hover { border-color: #3b82f6; color: #60a5fa; background: rgba(59,130,246,0.08); }
+        .evidence-chip { border: 1px solid rgba(251,191,36,0.4); border-radius: 999px; padding: 0.1rem 0.4rem; background: rgba(251,191,36,0.08); color: #fbbf24; font-size: 0.58rem; font-weight: 700; cursor: pointer; }
+        .evidence-chip:hover { background: rgba(251,191,36,0.18); }
+        .extract-action-btn { border: 1px solid #334155; border-radius: 0.65rem; padding: 0.35rem 0.7rem; background: rgba(15,23,42,0.65); color: #94a3b8; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: all 0.15s; }
+        .extract-action-btn:hover { border-color: #3b82f6; color: #60a5fa; background: rgba(59,130,246,0.08); }
+        .extract-action-btn.warn { border-color: rgba(245,158,11,0.6); color: #fbbf24; background: rgba(120,53,15,0.2); }
+        .extract-action-btn.success { border-color: rgba(34,197,94,0.5); color: #4ade80; background: rgba(6,95,70,0.2); }
+        .endpoint-meta-card { margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 0.9rem; border: 1px solid #334155; background: rgba(2,6,23,0.45); }
+        .endpoint-meta-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.45rem; }
+        .endpoint-alert { margin-top: 0.45rem; font-size: 0.65rem; color: #fbbf24; font-weight: 700; }
+        .match-meter { height: 6px; border-radius: 999px; overflow: hidden; background: rgba(30,41,59,0.7); margin-top: 0.35rem; }
+        .match-meter > span { display: block; height: 100%; background: linear-gradient(90deg, #f59e0b, #3b82f6, #22c55e); }
+        #evidence-modal { position: fixed; inset: 0; z-index: 10000; background: rgba(2,6,23,0.8); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        #evidence-modal .modal-card { width: min(900px, 95vw); max-height: 90vh; overflow: hidden; border-radius: 1rem; border: 1px solid #334155; background: #0f172a; display: flex; flex-direction: column; }
+        #evidence-modal .modal-head { padding: 1rem 1.2rem; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+        #evidence-modal .modal-body { padding: 1rem 1.2rem; overflow-y: auto; }
+        #evidence-modal .modal-close { border: 1px solid #334155; background: rgba(2,6,23,0.4); color: #94a3b8; border-radius: 0.5rem; width: 30px; height: 30px; cursor: pointer; }
+        #evidence-modal .modal-close:hover { color: #f1f5f9; border-color: #60a5fa; }
+        .light-mode .evidence-panel-summary { background: #dbeafe; border-color: #93c5fd; }
+        .light-mode .evidence-panel-locator { background: #f8fafc; border-color: #cbd5e1; }
+        .light-mode .evidence-panel-meta { background: #fef3c7; border-color: #fcd34d; }
+        .light-mode .evidence-panel-locator .evidence-text { color: #475569; }
+        .light-mode #evidence-modal { background: rgba(15,23,42,0.45); }
+        .light-mode #evidence-modal .modal-card { background: #ffffff; border-color: #cbd5e1; }
+        .light-mode #evidence-modal .modal-head { border-color: #e2e8f0; }
+        .light-mode .evidence-panel { background: rgba(241,245,249,0.8); border-color: #e2e8f0; }
+        .light-mode .evidence-text { color: #334155; }
+
+        /* RoB domain card */
+        .rob-domain-row { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 0.75rem; background: rgba(2,6,23,0.3); margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s; }
+        .rob-domain-row:hover { background: rgba(30,41,59,0.5); }
+
+        /* Toast Notifications */
+        #toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; pointer-events: none; }
+        .toast { background: #1e293b; color: white; padding: 1rem 1.5rem; border-radius: 1rem; margin-top: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); font-size: 0.8rem; font-weight: bold; border-left: 4px solid #3b82f6; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* ========== CRITICAL FALLBACKS (work without Tailwind CDN) ========== */
+        .hidden { display: none !important; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
+
+        /* Layout fallbacks if Tailwind CDN fails */
+        body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { display: flex; align-items: center; justify-content: space-between; height: 3.5rem; padding: 0 1.5rem; flex-shrink: 0; }
+        nav[role="tablist"] { display: flex; align-items: center; gap: 2rem; height: 3rem; padding: 0 1.5rem; flex-shrink: 0; overflow-x: auto; }
+        main { flex: 1; overflow: hidden; position: relative; }
+        .tab-content { height: 100%; overflow-y: auto; }
+
+        /* ========== TAB TRANSITIONS ========== */
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-content:not(.hidden) {
+            animation: tabFadeIn 0.3s ease-out;
+        }
+        .tab-btn {
+            position: relative;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent, #3b82f6);
+            transform: scaleX(0);
+            transition: transform 0.25s ease;
+        }
+        .tab-btn.tab-active::after {
+            transform: scaleX(1);
+        }
+
+        /* v10.0: Confidence Level Selector */
+        .conf-btn { font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 8px; background: transparent; color: #64748b; cursor: pointer; border: none; transition: all 0.2s; }
+        .conf-btn:hover { color: #94a3b8; }
+        .conf-btn.active { background: rgba(59,130,246,0.2); color: #60a5fa; }
+
+        /* v10.0: Stat Chips */
+        .stat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 14px; font-size: 11px; font-weight: 700; font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(255,255,255,0.08); }
+        .stat-chip-green { background: rgba(34,197,94,0.1); color: #4ade80; border-color: rgba(34,197,94,0.2); }
+        .stat-chip-amber { background: rgba(234,179,8,0.1); color: #facc15; border-color: rgba(234,179,8,0.2); }
+        .stat-chip-red { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.2); }
+        .stat-chip-blue { background: rgba(59,130,246,0.1); color: #60a5fa; border-color: rgba(59,130,246,0.2); }
+
+        /* v10.0: Collapsible sections */
+        .collapsible-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 1rem 1.5rem; border-radius: 1rem; background: rgba(15,23,42,0.5); border: 1px solid #1e293b; transition: background 0.2s; }
+        .collapsible-header:hover { background: rgba(30,41,59,0.5); }
+        .light-mode .collapsible-header { background: rgba(241,245,249,0.8); border-color: #e2e8f0; }
+
+        /* v10.0: Audit log */
+        .audit-entry { padding: 0.5rem 0; border-bottom: 1px solid rgba(30,41,59,0.5); font-size: 0.7rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+        .audit-entry:last-child { border-bottom: none; }
+        .audit-time { color: #64748b; font-family: 'JetBrains Mono', monospace; white-space: nowrap; flex-shrink: 0; }
+        .audit-msg { color: #94a3b8; }
+
+        /* v10.0: Manual form */
+        .manual-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+        .manual-form-grid label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; display: block; margin-bottom: 4px; }
+        .manual-form-grid input, .manual-form-grid select { width: 100%; background: #0f172a; border: 1px solid #1e293b; border-radius: 0.75rem; padding: 0.6rem 0.8rem; color: #f1f5f9; font-size: 13px; outline: none; }
+        .manual-form-grid input:focus, .manual-form-grid select:focus { border-color: #3b82f6; }
+        .light-mode .manual-form-grid input, .light-mode .manual-form-grid select { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+
+        /* v10.0: Evidence toggle in demographics */
+        .demo-ev-toggle { cursor: pointer; color: #64748b; transition: color 0.2s; }
+        .demo-ev-toggle:hover { color: #60a5fa; }
+        .demo-ev-row { background: rgba(2,6,23,0.3); }
+        .light-mode .demo-ev-row { background: rgba(241,245,249,0.5); }
+
+        /* v10.0: RoB domain evidence inline */
+        .rob-ev-inline { padding: 0.5rem 1rem 0.75rem 2.5rem; font-size: 0.7rem; animation: tabFadeIn 0.2s ease-out; }
+
+        /* v10.0: NYT-style Report enhancements */
+        .nyt-headline { font-family: 'Georgia', 'Times New Roman', serif; font-size: 2.5rem; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+        .nyt-subhead { font-family: 'Georgia', serif; font-size: 1.1rem; color: #94a3b8; line-height: 1.6; font-style: italic; }
+        .nyt-stat-callout { font-family: 'JetBrains Mono', monospace; font-size: 3rem; font-weight: 800; line-height: 1; }
+        .nyt-annotation { font-size: 0.7rem; color: #64748b; font-style: italic; line-height: 1.5; border-left: 2px solid #334155; padding-left: 0.75rem; margin: 0.5rem 0; }
+        .nyt-divider { border: none; border-top: 1px solid #1e293b; margin: 2rem 0; }
+        .light-mode .nyt-divider { border-color: #e2e8f0; }
+        .nyt-figure-caption { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700; margin-top: 0.5rem; }
+
+        /* v10.0: NYT narrative body + inline stats */
+        .nyt-body { font-family: 'Georgia', serif; font-size: 1.05rem; line-height: 1.85; color: #cbd5e1; }
+        .light-mode .nyt-body { color: #334155; }
+        .nyt-stat-inline { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #60a5fa; background: rgba(59,130,246,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.95em; }
+        .nyt-key-number { display: inline-flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border-radius: 1.5rem; background: rgba(15,23,42,0.5); border: 1px solid #1e293b; text-align: center; }
+        .light-mode .nyt-key-number { background: rgba(241,245,249,0.8); border-color: #e2e8f0; }
+        .nyt-key-value { font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; font-weight: 800; line-height: 1; }
+        .nyt-key-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; margin-top: 0.5rem; }
+        .nyt-dropcap::first-letter { font-family: 'Georgia', serif; float: left; font-size: 4.5rem; line-height: 0.8; padding: 0.1em 0.15em 0 0; font-weight: 700; color: #3b82f6; }
+
+        /* v11.0: Patient Mode */
+        body.patient-mode .expert-only { display: none !important; }
+        .patient-summary { display: none; }
+        body.patient-mode .patient-summary { display: block; }
+        .patient-traffic-light { width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; color: #fff; }
+        .patient-tl-green { background: #22c55e; box-shadow: 0 0 30px rgba(34,197,94,0.4); }
+        .patient-tl-amber { background: #eab308; box-shadow: 0 0 30px rgba(234,179,8,0.4); }
+        .patient-tl-red { background: #ef4444; box-shadow: 0 0 30px rgba(239,68,68,0.4); }
+
+        /* v11.0: Pulsing badge */
+        @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+        .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+
+        /* v11.0: Arabic / RTL */
+        body.arabic { direction: rtl; }
+        body.arabic .tab-btn, body.arabic h1, body.arabic h2, body.arabic h3, body.arabic h4,
+        body.arabic p, body.arabic span, body.arabic div, body.arabic td, body.arabic th,
+        body.arabic button, body.arabic label, body.arabic input { font-family: 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif; }
+        body.arabic header { direction: ltr; } /* keep header LTR for layout stability */
+        body.arabic .code-block, body.arabic .font-mono { direction: ltr; text-align: left; }
+        body.arabic canvas { direction: ltr; }
+
+        /* v11.0: Waiting Room Charts */
+        .wr-section { page-break-inside: avoid; }
+        .wr-icon-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; max-width: 160px; }
+        .wr-person { width: 14px; height: 14px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 7px; }
+        .wr-person.benefit { background: #22c55e; color: #fff; box-shadow: 0 0 8px rgba(34,197,94,0.3); }
+        .wr-person.wr-person-harm { background: #ef4444; color: #fff; box-shadow: 0 0 8px rgba(239,68,68,0.3); }
+        .wr-person.no-benefit { background: #1e293b; color: #475569; }
+        .light-mode .wr-person.no-benefit { background: #e2e8f0; color: #94a3b8; }
+        .wr-gauge { position: relative; width: 140px; height: 80px; }
+        .wr-gauge-label { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 900; }
+        .wr-print-btn { cursor: pointer; }
+        @media print { .wr-print-btn, .tab-btn, header, .export-dropdown { display: none !important; } .wr-section { break-inside: avoid; } }
+
+        /* v11.0: Export dropdown */
+        .export-dropdown { position: relative; display: inline-block; }
+        .export-dropdown-content { display: none; position: absolute; right: 0; top: 100%; margin-top: 0.5rem; min-width: 220px; background: #1e293b; border: 1px solid #334155; border-radius: 1rem; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); z-index: 100; }
+        .export-dropdown.open .export-dropdown-content { display: block; }
+        .export-dropdown-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; font-size: 11px; font-weight: 600; color: #cbd5e1; cursor: pointer; transition: background 0.15s; }
+        .export-dropdown-item:hover { background: rgba(59,130,246,0.1); color: #60a5fa; }
+        .export-dropdown-item i { width: 16px; text-align: center; font-size: 12px; }
+        .light-mode .export-dropdown-content { background: #fff; border-color: #e2e8f0; }
+        .light-mode .export-dropdown-item { color: #334155; }
+        .light-mode .export-dropdown-item:hover { background: rgba(59,130,246,0.05); }
+
+        /* v11.0: Version timeline */
+        .version-timeline { border-left: 3px solid #334155; padding-left: 1.5rem; margin-left: 0.5rem; }
+        .version-entry { position: relative; padding-bottom: 1.5rem; }
+        .version-entry::before { content: ''; position: absolute; left: -1.85rem; top: 0.15rem; width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; border: 2px solid #1e293b; }
+        .version-entry.alert::before { background: #f59e0b; }
+        .version-entry .v-date { font-size: 9px; font-family: 'JetBrains Mono', monospace; color: #64748b; }
+        .version-entry .v-summary { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .version-entry .v-delta { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
+        .version-entry .v-delta.alert { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .version-entry .v-delta.normal { background: rgba(59,130,246,0.1); color: #60a5fa; }
+
+        /* v11.0: Prior sensitivity buttons */
+        .prior-btn { font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 8px; background: transparent; color: #64748b; cursor: pointer; border: 1px solid #334155; transition: all 0.2s; }
+        .prior-btn:hover { color: #94a3b8; border-color: #475569; }
+        .prior-btn.active { background: rgba(168,85,247,0.15); color: #c084fc; border-color: #a855f7; }
+
+        /* v11.0: Data seal footer */
+        .data-seal { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #475569; padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: rgba(2,6,23,0.3); border: 1px solid #1e293b; text-align: center; }
+        .light-mode .data-seal { background: rgba(241,245,249,0.5); border-color: #e2e8f0; }
+        .light-mode #res-or, .light-mode #res-ci, .light-mode #res-i2 { color: #1e3a8a; }
+        .light-mode #res-bayes-cri, .light-mode #res-bayes-prob, .light-mode #res-info-frac { color: #6d28d9; }
+        .light-mode #res-hksj, .light-mode #res-pi, .light-mode #res-qtest { color: #1e3a8a; }
+        .light-mode .stat-chip { border-color: #cbd5e1; }
+        .light-mode .stat-chip-green { background: #dcfce7; color: #166534; border-color: #86efac; }
+        .light-mode .stat-chip-amber { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+        .light-mode .stat-chip-red { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+        .light-mode .stat-chip-blue { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+        .light-mode .prior-btn { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+        .light-mode .prior-btn.active { background: #2563eb; color: #fff; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <div id="evidence-modal" class="hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="evidence-modal-title">
+        <div class="modal-card">
+            <div class="modal-head">
+                <div>
+                    <div id="evidence-modal-title" class="text-sm font-bold text-slate-100">Evidence</div>
+                    <div id="evidence-modal-source" class="text-[11px] text-slate-400 font-mono mt-1"></div>
+                </div>
+                <button type="button" class="modal-close" aria-label="Close evidence dialog" onclick="ExtractEngine.closeEvidenceModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="evidence-modal-body" class="text-sm text-slate-200 leading-relaxed"></div>
+                <div id="evidence-modal-jumps" class="evidence-actions mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="h-14 border-b border-slate-800 bg-slate-950 flex items-center justify-between px-6 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">R</div>
+            <h1 class="font-bold text-lg tracking-tight text-white">RapidMeta <span class="text-blue-400 font-normal text-sm ml-1">Precision v11.0</span></h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-1 bg-slate-900 rounded-xl p-1 border border-slate-800" role="radiogroup" aria-label="Confidence level">
+                <button onclick="RapidMeta.setConfLevel(0.90)" class="conf-btn" data-conf="0.90" role="radio" aria-checked="false" aria-label="90% confidence level">90%</button>
+                <button onclick="RapidMeta.setConfLevel(0.95)" class="conf-btn active" data-conf="0.95" role="radio" aria-checked="true" aria-label="95% confidence level">95%</button>
+                <button onclick="RapidMeta.setConfLevel(0.99)" class="conf-btn" data-conf="0.99" role="radio" aria-checked="false" aria-label="99% confidence level">99%</button>
+            </div>
+            <div class="h-6 w-px bg-slate-800"></div>
+            <div class="flex items-center gap-1 bg-slate-900 rounded-xl p-1 border border-slate-800" role="radiogroup" aria-label="Effect measure">
+                <button onclick="RapidMeta.setEffectMeasure('OR')" class="conf-btn active" data-em="OR" role="radio" aria-checked="true">OR</button>
+                <button onclick="RapidMeta.setEffectMeasure('RR')" class="conf-btn" data-em="RR" role="radio" aria-checked="false">RR</button>
+            </div>
+            <div class="h-6 w-px bg-slate-800"></div>
+            <select id="outcome-selector" onchange="RapidMeta.setOutcome(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-[10px] font-bold text-slate-300 outline-none uppercase tracking-wider" aria-label="Outcome to pool" title="Select outcome for pooling">
+                <option value="default">Matched CV Composite (default)</option>
+            </select>
+            <div class="h-6 w-px bg-slate-800"></div>
+            <button onclick="RapidMeta.togglePatientMode()" class="text-slate-400 hover:text-white transition-colors relative" title="Toggle Patient/Clinician Mode" id="btn-patient-mode" aria-label="Toggle between patient-friendly and clinician expert views">
+                <i class="fa-solid fa-stethoscope"></i>
+                <span class="pulse-dot absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-purple-500"></span>
+            </button>
+            <button onclick="RapidMeta.toggleArabic()" class="text-slate-400 hover:text-white transition-colors text-xs font-bold" title="Toggle Arabic / English" aria-label="Toggle Arabic and English" id="btn-lang">عر</button>
+            <button onclick="RapidMeta.toggleDarkMode()" class="text-slate-400 hover:text-white transition-colors" title="Toggle Light/Dark Mode" aria-label="Toggle light and dark mode">
+                <i class="fa-solid fa-circle-half-stroke"></i>
+            </button>
+            <div class="h-6 w-px bg-slate-800"></div>
+            <input id="reviewer-id-input" type="text" maxlength="24" onchange="RapidMeta.setReviewerId(this.value)" placeholder="Reviewer ID" class="w-28 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-200 outline-none uppercase tracking-wider" title="Set your reviewer identifier (initials or name)">
+            <button onclick="RapidMeta.toggleReviewLock()" class="text-slate-400 hover:text-white transition-colors" title="Claim or release reviewer lock" aria-label="Toggle reviewer lock">
+                <i class="fa-solid fa-lock"></i>
+            </button>
+            <div id="review-lock-status" class="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Unlocked</div>
+            <button onclick="RapidMeta.exportReviewPack()" class="text-slate-400 hover:text-white transition-colors" title="Export review handoff JSON" aria-label="Export review handoff">
+                <i class="fa-solid fa-file-arrow-down"></i>
+            </button>
+            <button onclick="document.getElementById('review-import-input').click()" class="text-slate-400 hover:text-white transition-colors" title="Import review handoff JSON" aria-label="Import review handoff">
+                <i class="fa-solid fa-file-arrow-up"></i>
+            </button>
+            <div id="aact-status" class="text-[10px] text-slate-500 uppercase tracking-widest flex items-center gap-2 font-bold">
+                <div id="aact-dot" class="w-2 h-2 rounded-full bg-slate-700 font-bold"></div> AACT Proxy
+            </div>
+            <button onclick="RapidMeta.reset()" class="text-slate-500 hover:text-red-400 transition-colors" title="Full Reset" aria-label="Reset all data and start fresh"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+    </header>
+    <input id="review-import-input" type="file" accept=".json,application/json" class="hidden" onchange="RapidMeta.importReviewPack(event)">
+
+    <!-- Navigation -->
+    <nav class="h-12 bg-slate-900 border-b border-slate-800 flex items-center px-6 gap-8 shrink-0 overflow-x-auto" role="tablist">
+        <button onclick="RapidMeta.switchTab('protocol')" class="tab-btn h-full text-sm font-medium text-slate-400 hover:text-white transition-all duration-200 border-b-2 border-transparent" data-tab="protocol" role="tab" aria-selected="false" aria-controls="tab-protocol" id="btn-tab-protocol">1. Protocol</button>
+        <button onclick="RapidMeta.switchTab('search')" class="tab-btn h-full text-sm font-medium text-slate-400 hover:text-white transition-all duration-200 border-b-2 border-transparent" data-tab="search" role="tab" aria-selected="false" aria-controls="tab-search" id="btn-tab-search">2. Search</button>
+        <button onclick="RapidMeta.switchTab('screen')" class="tab-btn h-full text-sm font-medium text-slate-400 hover:text-white transition-all duration-200 border-b-2 border-transparent" data-tab="screen" role="tab" aria-selected="false" aria-controls="tab-screen" id="btn-tab-screen">3. Screening</button>
+        <button onclick="RapidMeta.switchTab('extract')" class="tab-btn h-full text-sm font-medium text-slate-400 hover:text-white transition-all duration-200 border-b-2 border-transparent" data-tab="extract" role="tab" aria-selected="false" aria-controls="tab-extract" id="btn-tab-extract">4. Extraction</button>
+        <button onclick="RapidMeta.switchTab('analysis')" class="tab-btn h-full text-sm font-medium text-slate-400 hover:text-white transition-all duration-200 border-b-2 border-transparent" data-tab="analysis" role="tab" aria-selected="false" aria-controls="tab-analysis" id="btn-tab-analysis">5. Analysis Suite</button>
+        <button onclick="RapidMeta.switchTab('report')" class="tab-btn h-full text-sm font-medium text-purple-400 hover:text-purple-300 transition-all duration-200 border-b-2 border-transparent" data-tab="report" role="tab" aria-selected="false" aria-controls="tab-report" id="btn-tab-report">6. Scientific Output</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-hidden relative">
+        
+        <!-- Tab: Protocol -->
+        <section id="tab-protocol" class="tab-content h-full p-8 overflow-y-auto hidden" role="tabpanel" aria-labelledby="btn-tab-protocol">
+            <div class="max-w-5xl mx-auto space-y-8">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-2 text-white">Systematic Review Protocol</h2>
+                        <p class="opacity-60 font-medium">PROSPERO-style Registration &mdash; PRISMA 2020 &amp; AMSTAR 2 Compliant</p>
+                    </div>
+                    <button onclick="RapidMeta.saveProtocol()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-2xl text-sm font-bold shadow-2xl transition-all">Save Protocol</button>
+                </div>
+
+                <!-- 1. Registration & Administrative -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-blue-400 tracking-widest"><i class="fa-solid fa-id-card mr-2"></i>1. Registration &amp; Administrative Information <span class="text-slate-500 ml-2">[PRISMA #24, AMSTAR #2]</span></h3></div>
+                    <table class="w-full text-left text-xs"><tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-4 w-1/4 font-bold text-slate-400">Review Title</td><td class="p-4 text-slate-300">First-line Cryoballoon Ablation for Paroxysmal Atrial Fibrillation: A Living Systematic Review and Meta-Analysis of Randomized Controlled Trials</td></tr>
+                        <tr><td class="p-4 font-bold text-slate-400">Protocol Version</td><td class="p-4 text-slate-300">v11.0 (Living Protocol &mdash; auto-updating)</td></tr>
+                        <tr><td class="p-4 font-bold text-slate-400">Date of First Registration</td><td class="p-4 text-slate-300"><span id="proto-reg-date">2026-03-03</span></td></tr>
+                        <tr><td class="p-4 font-bold text-slate-400">Last Substantive Amendment</td><td class="p-4 text-slate-300"><span id="proto-amend-date">2026-03-03</span></td></tr>
+                        <tr><td class="p-4 font-bold text-slate-400">Planned Update Frequency</td><td class="p-4 text-slate-300">Continuous (living review); formal snapshot at each new trial publication</td></tr>
+                        <tr><td class="p-4 font-bold text-slate-400">Funding Source</td><td class="p-4 text-slate-300">No external funding (independent academic review)</td></tr>
+                        <tr><td class="p-4 font-bold text-slate-400">Conflicts of Interest</td><td class="p-4 text-slate-300">None declared</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 2. PICO Framework -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-emerald-400 tracking-widest"><i class="fa-solid fa-bullseye mr-2"></i>2. Review Question &mdash; PICO Framework <span class="text-slate-500 ml-2">[PRISMA #3, AMSTAR #1]</span></h3></div>
+                    <table class="w-full text-left text-xs"><tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-4 w-1/4 font-bold text-blue-400 bg-blue-400/5">Population</td><td class="p-4"><input id="p-pop" class="w-full bg-transparent outline-none font-medium text-slate-200" value="Adults with symptomatic, treatment-naive paroxysmal atrial fibrillation"></td></tr>
+                        <tr><td class="p-4 font-bold text-emerald-400 bg-emerald-400/5">Intervention</td><td class="p-4"><input id="p-int" class="w-full bg-transparent outline-none font-medium text-slate-200" value="Cryoballoon ablation as first-line rhythm-control therapy"></td></tr>
+                        <tr><td class="p-4 font-bold text-rose-400 bg-rose-400/5">Comparator</td><td class="p-4"><input id="p-comp" class="w-full bg-transparent outline-none font-medium text-slate-200" value="Antiarrhythmic drug therapy"></td></tr>
+                        <tr><td class="p-4 font-bold text-amber-400 bg-amber-400/5">Primary Outcome</td><td class="p-4"><input id="p-out" class="w-full bg-transparent outline-none font-medium text-slate-200" value="Atrial tachyarrhythmia recurrence after 90-day blanking period"></td></tr>
+                        <tr><td class="p-4 font-bold text-purple-400 bg-purple-400/5">Secondary Outcomes</td><td class="p-4 text-slate-300">Symptomatic recurrence, serious adverse events, hospitalization, and quality-of-life endpoints when extractable</td></tr>
+                        <tr><td class="p-4 font-bold text-cyan-400 bg-cyan-400/5">Subgroup Plan</td><td class="p-4"><input id="p-subgroup" class="w-full bg-transparent outline-none font-medium text-slate-200" value="Trial, rhythm-monitoring method, and endpoint ascertainment set"></td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 3. Eligibility Criteria -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-emerald-400 tracking-widest"><i class="fa-solid fa-filter mr-2"></i>3. Eligibility Criteria <span class="text-slate-500 ml-2">[PRISMA #5&ndash;6, AMSTAR #3]</span></h3></div>
+                    <table class="w-full text-left text-xs"><thead class="bg-slate-900/50"><tr><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/6">Criterion</th><th class="p-3 text-[10px] font-bold uppercase text-emerald-500 tracking-widest w-5/12">Inclusion</th><th class="p-3 text-[10px] font-bold uppercase text-rose-500 tracking-widest w-5/12">Exclusion</th></tr></thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 font-bold text-slate-400">Study Design</td><td class="p-3 text-slate-300">Randomized controlled trials (RCTs), parallel or crossover</td><td class="p-3 text-slate-400">Non-randomized, observational, single-arm, case series</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Phase</td><td class="p-3 text-slate-300">Phase III or IV</td><td class="p-3 text-slate-400">Phase I/II (including IIa/IIb), PK/PD, dose-finding, bioequivalence, first-in-human</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Participants</td><td class="p-3 text-slate-300">Adults &ge;18 years with symptomatic, treatment-naive paroxysmal atrial fibrillation</td><td class="p-3 text-slate-400">Healthy volunteers, paediatric, animal/in-vitro</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Intervention</td><td class="p-3 text-slate-300">Cryoballoon ablation as the initial rhythm-control strategy</td><td class="p-3 text-slate-400">Repeat ablation studies or non-cryoballoon energy platforms</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Comparator</td><td class="p-3 text-slate-300">Class I or III antiarrhythmic drug therapy</td><td class="p-3 text-slate-400">Non-drug comparator without antiarrhythmic control arm</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Outcomes</td><td class="p-3 text-slate-300">Atrial tachyarrhythmia recurrence or other extractable binary clinical endpoints</td><td class="p-3 text-slate-400">Biomarker-only, PK-only, no event data</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Publication</td><td class="p-3 text-slate-300">Published or registered post-2015; any language</td><td class="p-3 text-slate-400">Pre-2015; duplicate cohorts; editorials, letters, reviews</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Follow-up</td><td class="p-3 text-slate-300">&ge;12 weeks (primary outcome assessment)</td><td class="p-3 text-slate-400">&lt;12 weeks or acute/single-dose studies</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 4. Information Sources & Search Strategy -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-blue-400 tracking-widest"><i class="fa-solid fa-magnifying-glass mr-2"></i>4. Information Sources &amp; Search Strategy <span class="text-slate-500 ml-2">[PRISMA #7&ndash;8, AMSTAR #4&ndash;5]</span></h3></div>
+                    <table class="w-full text-left text-xs"><thead class="bg-slate-900/50"><tr><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/5">Database</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest">Search String / API Query</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/6">Type</th></tr></thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 font-bold text-blue-400">ClinicalTrials.gov</td><td class="p-3"><code class="text-[10px] text-slate-400 font-mono break-all">https://clinicaltrials.gov/api/v2/studies?query.term=cryoballoon%20ablation%20atrial%20fibrillation&amp;pageSize=100&amp;filter.overallStatus=COMPLETED</code></td><td class="p-3 text-slate-400">Registry (API v2)</td></tr>
+                        <tr><td class="p-3 font-bold text-purple-400">PubMed (Europe PMC)</td><td class="p-3"><code class="text-[10px] text-slate-400 font-mono break-all">(cryoballoon ablation OR cryoablation) AND atrial fibrillation AND (first-line OR initial treatment OR treatment-naive) AND (randomized OR trial) AND SRC:MED</code></td><td class="p-3 text-slate-400">Bibliographic (REST)</td></tr>
+                        <tr><td class="p-3 font-bold text-amber-400">OpenAlex</td><td class="p-3"><code class="text-[10px] text-slate-400 font-mono break-all">search=cryoballoon%20ablation%20atrial%20fibrillation&amp;per_page=50</code></td><td class="p-3 text-slate-400">Bibliographic (REST)</td></tr>
+                        <tr><td class="p-3 font-bold text-emerald-400">Reference Check</td><td class="p-3 text-slate-400">Backward citation search: built-in landmark database cross-checked against API returns</td><td class="p-3 text-slate-400">Manual supplement</td></tr>
+                    </tbody></table>
+                    <div class="p-4 bg-slate-950/30 border-t border-slate-800">
+                        <div class="text-[10px] font-bold uppercase text-slate-500 tracking-widest mb-1"><i class="fa-solid fa-code-merge mr-1"></i>Deduplication [PRISMA #16a]</div>
+                        <p class="text-[11px] text-slate-400 leading-relaxed">NCT-ID exact match &rarr; PubMed dbCrossReferenceList linkage &rarr; NCT pattern extraction from abstract &rarr; fuzzy title dedup (normalized alphanumeric). Enrichment: abstracts, authors, journal metadata merged from PubMed into registry stubs. All 3 fetches run in parallel via <code>Promise.allSettled</code>.</p>
+                    </div>
+                </div>
+
+                <!-- 5. Study Selection Process -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-amber-400 tracking-widest"><i class="fa-solid fa-filter-circle-xmark mr-2"></i>5. Study Selection Process <span class="text-slate-500 ml-2">[PRISMA #16, AMSTAR #5&ndash;7]</span></h3></div>
+                    <table class="w-full text-left text-xs"><tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 w-1/4 font-bold text-slate-400">Stage 1: Auto-Screening</td><td class="p-3 text-slate-300">RCT relevance classifier (keyword + publication type scoring, 0&ndash;100). Auto-exclude &lt;25. <span class="text-slate-500 italic">App location: Screening tab</span></td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Stage 2: Title/Abstract</td><td class="p-3 text-slate-300">Two-reviewer adjudication workflow with rationale note and second-review confirmation (I = propose include, E = propose exclude, C = second confirmation, N/P = navigate). <span class="text-slate-500 italic">App location: Screening tab</span></td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Stage 3: Full Text</td><td class="p-3 text-slate-300">Verify eligibility criteria against full manuscript; extract 2&times;2 table. <span class="text-slate-500 italic">App location: Extraction tab</span></td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Conflict Resolution</td><td class="p-3 text-slate-300">Re-review with exclusion reason recorded in audit log. PRISMA flow auto-generated.</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">PRISMA Flow Diagram</td><td class="p-3 text-slate-300">Auto-computed from search/screening counts. <span class="text-slate-500 italic">App location: Report tab &rarr; PRISMA section</span></td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 6. Data Extraction -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-cyan-400 tracking-widest"><i class="fa-solid fa-table mr-2"></i>6. Data Collection &amp; Extraction <span class="text-slate-500 ml-2">[PRISMA #10, AMSTAR #6]</span></h3></div>
+                    <table class="w-full text-left text-xs"><thead class="bg-slate-900/50"><tr><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/4">Data Item</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest">Details</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/5">App Location</th></tr></thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 font-bold text-slate-400">Study identifiers</td><td class="p-3 text-slate-300">NCT ID, PMID, DOI, first author, year</td><td class="p-3 text-slate-500">Extraction &rarr; Data Entry</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Participants</td><td class="p-3 text-slate-300">N randomized per arm, age, sex distribution, indication, baseline eGFR</td><td class="p-3 text-slate-500">Extraction &rarr; Demographics</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Intervention details</td><td class="p-3 text-slate-300">Ablation system, blanking period, and monitoring strategy</td><td class="p-3 text-slate-500">Extraction &rarr; Data Entry</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Outcome events</td><td class="p-3 text-slate-300">2&times;2 table: Events(Tx), N(Tx), Events(Ctrl), N(Ctrl); continuity correction 0.5 for zero cells</td><td class="p-3 text-slate-500">Extraction &rarr; Data Entry</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Risk of Bias</td><td class="p-3 text-slate-300">RoB 2 domains D1&ndash;D5, each rated Low/Some/High</td><td class="p-3 text-slate-500">Extraction &rarr; Risk of Bias</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Source evidence</td><td class="p-3 text-slate-300">Verbatim extracts from published manuscripts with page/table references</td><td class="p-3 text-slate-500">Extraction &rarr; Evidence panels</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 7. Risk of Bias Assessment -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-rose-400 tracking-widest"><i class="fa-solid fa-triangle-exclamation mr-2"></i>7. Risk of Bias Assessment <span class="text-slate-500 ml-2">[PRISMA #11&ndash;12, AMSTAR #9]</span></h3></div>
+                    <table class="w-full text-left text-xs"><thead class="bg-slate-900/50"><tr><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/4">Domain</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest">Signalling Questions (RoB 2)</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/5">App Location</th></tr></thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 font-bold text-slate-400">D1: Randomization</td><td class="p-3 text-slate-300">Sequence generation, allocation concealment</td><td class="p-3 text-slate-500">Extraction &rarr; RoB (click to cycle)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">D2: Deviations</td><td class="p-3 text-slate-300">Blinding, ITT adherence, co-interventions</td><td class="p-3 text-slate-500">Extraction &rarr; RoB (click to cycle)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">D3: Missing Data</td><td class="p-3 text-slate-300">Completeness, attrition handling, sensitivity for missing</td><td class="p-3 text-slate-500">Extraction &rarr; RoB (click to cycle)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">D4: Measurement</td><td class="p-3 text-slate-300">Outcome assessment blinding, adjudication committees</td><td class="p-3 text-slate-500">Extraction &rarr; RoB (click to cycle)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">D5: Selective Reporting</td><td class="p-3 text-slate-300">Pre-registered endpoints, protocol deviations</td><td class="p-3 text-slate-500">Extraction &rarr; RoB (click to cycle)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Presentation</td><td class="p-3 text-slate-300">Traffic-light summary table (per-study) + stacked horizontal bar chart (per-domain)</td><td class="p-3 text-slate-500">Analysis &rarr; Charts #16, Extraction &rarr; RoB</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 8. Statistical Analysis Plan -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-blue-400 tracking-widest"><i class="fa-solid fa-chart-bar mr-2"></i>8. Synthesis &amp; Statistical Methods <span class="text-slate-500 ml-2">[PRISMA #13, AMSTAR #11&ndash;12]</span></h3></div>
+                    <table class="w-full text-left text-xs"><thead class="bg-slate-900/50"><tr><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/4">Method</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest">Specification</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/5">App Location</th></tr></thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 font-bold text-slate-400">Effect Measure</td><td id="protocol-em-desc" class="p-3 text-slate-300">Odds Ratio (OR) computed on log scale; 0.5 continuity correction for zero cells</td><td class="p-3 text-slate-500">Analysis &rarr; Stats</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Pooling Model</td><td class="p-3 text-slate-300">DerSimonian-Laird random-effects (inverse-variance weighting)</td><td class="p-3 text-slate-500">Analysis &rarr; Forest (#1)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">CI Adjustment</td><td class="p-3 text-slate-300">Hartung-Knapp-Sidik-Jonkman (HKSJ); t-distribution with df = k&minus;1</td><td class="p-3 text-slate-500">Analysis &rarr; Stats</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Prediction Interval</td><td class="p-3 text-slate-300">t-distribution, df = k&minus;2 (Higgins 2009)</td><td class="p-3 text-slate-500">Analysis &rarr; Stats</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Heterogeneity</td><td class="p-3 text-slate-300">Cochran Q (p-value), I&sup2; (%), &tau;&sup2; (DL estimator)</td><td class="p-3 text-slate-500">Analysis &rarr; Stats</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Subgroup Analysis</td><td class="p-3 text-slate-300">By trial and rhythm-surveillance approach; Q-between test for interaction</td><td class="p-3 text-slate-500">Analysis &rarr; Subgroup (#2)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Cumulative MA</td><td class="p-3 text-slate-300">Sequential addition by year; monitoring evidence accrual</td><td class="p-3 text-slate-500">Analysis &rarr; Cumulative (#3)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Leave-One-Out</td><td class="p-3 text-slate-300">Influence analysis: remove each study, re-pool</td><td class="p-3 text-slate-500">Analysis &rarr; LOO (#5)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Bayesian RE</td><td class="p-3 text-slate-300">Grid approximation (200 &tau; &times; 300 &mu;); half-normal prior on &tau;; posterior OR + CrI + P(OR&lt;1)</td><td class="p-3 text-slate-500">Analysis &rarr; Posterior (#11)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Meta-Regression</td><td class="p-3 text-slate-300">WLS on log-OR; covariates: Year, Phase, AF Phenotype; Knapp-Hartung SE; permutation p (1000x)</td><td class="p-3 text-slate-500">Analysis &rarr; Meta-Reg (#12)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Fragility Index</td><td class="p-3 text-slate-300">Walsh method: sequential single-arm event modification until significance flips</td><td class="p-3 text-slate-500">Analysis &rarr; Stats</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">NNT / Clinical Utility</td><td class="p-3 text-slate-300">NNT = 1 / ARR; curve across baseline risk range</td><td class="p-3 text-slate-500">Analysis &rarr; NNT (#8)</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 9. Publication Bias -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-amber-400 tracking-widest"><i class="fa-solid fa-eye-slash mr-2"></i>9. Publication Bias Assessment <span class="text-slate-500 ml-2">[PRISMA #14&ndash;15, AMSTAR #15]</span></h3></div>
+                    <table class="w-full text-left text-xs"><thead class="bg-slate-900/50"><tr><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/4">Method</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest">Specification</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/5">App Location</th></tr></thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 font-bold text-slate-400">Visual</td><td class="p-3 text-slate-300">Contour-enhanced funnel plot with significance regions (p &lt; 0.01/0.05/0.10)</td><td class="p-3 text-slate-500">Analysis &rarr; Funnel (#9)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Statistical</td><td class="p-3 text-slate-300">Egger's weighted regression test: intercept &ne; 0 (k &ge; 3 required)</td><td class="p-3 text-slate-500">Analysis &rarr; Egger (#15)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Correction</td><td class="p-3 text-slate-300">Duval-Tweedie trim-and-fill (L0 estimator); imputed studies shown as open circles on funnel</td><td class="p-3 text-slate-500">Analysis &rarr; Stats chip</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Sensitivity</td><td class="p-3 text-slate-300">Copas-style sensitivity (heuristic rank-reweighting, not Copas-Shi MLE): &rho; sweep &minus;0.99 to 0 (34 steps); classify Robust/Sensitive</td><td class="p-3 text-slate-500">Analysis &rarr; Copas (#13)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Power</td><td class="p-3 text-slate-300">RIS formula with D&sup2; diversity; conditional power curve (next-study N 100&ndash;2000)</td><td class="p-3 text-slate-500">Analysis &rarr; Power (#14)</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 10. Certainty of Evidence -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-purple-400 tracking-widest"><i class="fa-solid fa-scale-balanced mr-2"></i>10. Certainty of Evidence <span class="text-slate-500 ml-2">[PRISMA #22, AMSTAR #14]</span></h3></div>
+                    <table class="w-full text-left text-xs"><thead class="bg-slate-900/50"><tr><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/4">GRADE Domain</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest">Criteria for Downgrading</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-1/5">App Location</th></tr></thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 font-bold text-slate-400">Risk of Bias</td><td class="p-3 text-slate-300">&ge;50% studies rated Some Concerns or High on any domain</td><td class="p-3 text-slate-500">Report &rarr; GRADE</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Inconsistency</td><td class="p-3 text-slate-300">I&sup2; &ge; 50% or prediction interval crosses null</td><td class="p-3 text-slate-500">Report &rarr; GRADE</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Indirectness</td><td class="p-3 text-slate-300">Population, intervention, or outcome mismatch with review question</td><td class="p-3 text-slate-500">Report &rarr; GRADE</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Imprecision</td><td class="p-3 text-slate-300">CI crosses MID (OR = 0.80 or 1.25) or optimal information size not met</td><td class="p-3 text-slate-500">Report &rarr; GRADE</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Publication Bias</td><td class="p-3 text-slate-300">Egger p &lt; 0.10, asymmetric funnel, Copas sensitivity, trim-fill k0 &gt; 0</td><td class="p-3 text-slate-500">Report &rarr; GRADE</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Supplementary</td><td class="p-3 text-slate-300">Bayesian P(OR &lt; 1), Information Fraction (RIS), Summary of Findings table</td><td class="p-3 text-slate-500">Report &rarr; SoF table</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 11. AMSTAR 2 Critical Domain Checklist -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-cyan-400 tracking-widest"><i class="fa-solid fa-clipboard-check mr-2"></i>11. AMSTAR 2 Critical Domains Compliance</h3></div>
+                    <table class="w-full text-left text-xs"><thead class="bg-slate-900/50"><tr><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-[5%]">#</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-[40%]">AMSTAR 2 Item</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-[10%]">Critical?</th><th class="p-3 text-[10px] font-bold uppercase text-slate-500 tracking-widest w-[45%]">How Addressed</th></tr></thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 text-slate-500">1</td><td class="p-3 text-slate-300">PICO components for research question</td><td class="p-3 text-slate-500">No</td><td class="p-3 text-emerald-400">Section 2 above</td></tr>
+                        <tr><td class="p-3 text-slate-500">2</td><td class="p-3 text-slate-300">Protocol registered before commencement</td><td class="p-3 font-bold text-amber-400">Yes</td><td class="p-3 text-emerald-400">This protocol tab (living protocol)</td></tr>
+                        <tr><td class="p-3 text-slate-500">4</td><td class="p-3 text-slate-300">Comprehensive literature search strategy</td><td class="p-3 font-bold text-amber-400">Yes</td><td class="p-3 text-emerald-400">Section 4: 3 databases + reference check; search strings visible</td></tr>
+                        <tr><td class="p-3 text-slate-500">7</td><td class="p-3 text-slate-300">List of excluded studies with justifications</td><td class="p-3 font-bold text-amber-400">Yes</td><td class="p-3 text-emerald-400">Screening tab: excluded with auto/manual reason</td></tr>
+                        <tr><td class="p-3 text-slate-500">9</td><td class="p-3 text-slate-300">Satisfactory RoB assessment technique</td><td class="p-3 font-bold text-amber-400">Yes</td><td class="p-3 text-emerald-400">Section 7: Cochrane RoB 2, 5 domains</td></tr>
+                        <tr><td class="p-3 text-slate-500">11</td><td class="p-3 text-slate-300">Appropriate meta-analytical methods</td><td class="p-3 font-bold text-amber-400">Yes</td><td class="p-3 text-emerald-400">Section 8: DL RE + HKSJ, R/Python cross-validated</td></tr>
+                        <tr><td class="p-3 text-slate-500">13</td><td class="p-3 text-slate-300">RoB impact on results considered</td><td class="p-3 font-bold text-amber-400">Yes</td><td class="p-3 text-emerald-400">GRADE domain 1, Extraction &rarr; RoB tab</td></tr>
+                        <tr><td class="p-3 text-slate-500">15</td><td class="p-3 text-slate-300">Publication bias assessment</td><td class="p-3 font-bold text-amber-400">Yes</td><td class="p-3 text-emerald-400">Section 9: Funnel + Egger + Trim-Fill + Copas</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- 12. Reporting & Dissemination -->
+                <div class="glass rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
+                    <div class="bg-slate-900/80 p-4 border-b border-slate-800"><h3 class="text-xs font-bold uppercase text-emerald-400 tracking-widest"><i class="fa-solid fa-file-export mr-2"></i>12. Reporting &amp; Dissemination <span class="text-slate-500 ml-2">[PRISMA #23&ndash;27, AMSTAR #16]</span></h3></div>
+                    <table class="w-full text-left text-xs"><tbody class="divide-y divide-slate-800/50">
+                        <tr><td class="p-3 w-1/4 font-bold text-slate-400">Reporting Guideline</td><td class="p-3 text-slate-300">PRISMA 2020 (27-item checklist auto-generated as CSV)</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Export Formats</td><td class="p-3 text-slate-300">CSV (study data), JSON (full state), R validation script, Python validation script, PRISMA checklist CSV, HTML standalone report</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Data Integrity</td><td class="p-3 text-slate-300">SHA-256 data seal (cryptographic fingerprint) on every report; version timeline with delta alerts</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Cross-Validation</td><td class="p-3 text-slate-300">R (<code>metafor</code>) and Python (<code>scipy</code>) scripts included for independent replication of pooled OR, CI, &tau;&sup2;</td></tr>
+                        <tr><td class="p-3 font-bold text-slate-400">Patient Mode</td><td class="p-3 text-slate-300">Plain-language summary with traffic-light visual; hides technical statistics for lay audiences</td></tr>
+                    </tbody></table>
+                </div>
+
+                <!-- Search History Log -->
+                <div class="glass rounded-[2rem] border border-slate-800 p-6 shadow-2xl">
+                    <h3 class="text-xs font-bold uppercase text-slate-500 tracking-widest mb-4"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Search History Log <span class="text-slate-500">[PRISMA #8]</span></h3>
+                    <div id="protocol-search-log" class="space-y-2">
+                        <p class="text-xs text-slate-500 italic">No searches recorded yet. Run an acquisition from the Search tab to log results here.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab: Search -->
+        <section id="tab-search" class="tab-content h-full p-8 overflow-y-auto hidden" role="tabpanel" aria-labelledby="btn-tab-search">
+            <div class="max-w-5xl mx-auto space-y-6">
+                <div class="flex justify-between items-center bg-slate-900/50 p-8 rounded-3xl border border-slate-800 shadow-xl text-white">
+                    <div class="flex items-center gap-6">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-600/20 flex items-center justify-center text-blue-400"><i class="fa-solid fa-satellite-dish text-2xl"></i></div>
+                        <div><h2 class="text-xl font-bold">Evidence Acquisition</h2><p class="text-xs opacity-50 mt-1">Multi-Source: ClinicalTrials.gov + PubMed + OpenAlex</p></div>
+                    </div>
+                    <button onclick="SearchEngine.executePrecision()" id="btn-search" class="bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-lg transition-all"><i class="fa-solid fa-play"></i> Run Acquisition</button>
+                </div>
+                <div id="search-status-bar" class="hidden glass p-6 rounded-3xl border border-blue-500/20 bg-blue-500/5">
+                    <div class="flex justify-between items-center mb-4">
+                        <div id="search-progress-text" class="text-xs font-mono text-blue-400 flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>Polling sources...</div>
+                        <div class="flex gap-8">
+                            <div class="text-center"><div class="text-[10px] opacity-50 font-bold uppercase mb-1">ClinicalTrials.gov</div><div id="search-hits-registry" class="text-blue-400 text-xl font-bold font-mono">0</div></div>
+                            <div class="text-center"><div class="text-[10px] opacity-50 font-bold uppercase mb-1">PubMed</div><div id="search-hits-pubmed" class="text-purple-400 text-xl font-bold font-mono">0</div></div>
+                            <div class="text-center"><div class="text-[10px] opacity-50 font-bold uppercase mb-1">OpenAlex</div><div id="search-hits-openalex" class="text-amber-400 text-xl font-bold font-mono">0</div></div>
+                            <div class="text-center"><div class="text-[10px] opacity-50 font-bold uppercase mb-1">After Dedup</div><div id="search-hits-dedup" class="text-emerald-400 text-xl font-bold font-mono">0</div></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Search Strategy Display (shown after search completes) -->
+                <div id="search-strategy-panel" class="hidden glass p-6 rounded-3xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-bold uppercase text-slate-500 tracking-widest"><i class="fa-solid fa-magnifying-glass mr-2"></i>Search Strings Used</h3>
+                        <span id="search-timestamp" class="text-[10px] font-mono text-slate-500"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10">
+                            <div class="text-[9px] font-bold uppercase text-blue-400 tracking-widest mb-1">ClinicalTrials.gov API v2</div>
+                            <code class="text-[9px] text-slate-400 font-mono leading-relaxed block break-all">https://clinicaltrials.gov/api/v2/studies?query.term=cryoballoon%20ablation%20atrial%20fibrillation&amp;pageSize=100&amp;filter.overallStatus=COMPLETED</code>
+                        </div>
+                        <div class="p-4 bg-purple-500/5 rounded-xl border border-purple-500/10">
+                            <div class="text-[9px] font-bold uppercase text-purple-400 tracking-widest mb-1">Europe PMC (PubMed mirror)</div>
+                            <code class="text-[9px] text-slate-400 font-mono leading-relaxed block break-all">(cryoballoon ablation OR cryoablation) AND atrial fibrillation AND (first-line OR initial treatment OR treatment-naive) AND (randomized OR trial) AND SRC:MED</code>
+                        </div>
+                        <div class="p-4 bg-amber-500/5 rounded-xl border border-amber-500/10">
+                            <div class="text-[9px] font-bold uppercase text-amber-400 tracking-widest mb-1">OpenAlex API</div>
+                            <code class="text-[9px] text-slate-400 font-mono leading-relaxed block break-all">search=cryoballoon%20ablation%20atrial%20fibrillation&amp;per_page=50</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search History Log -->
+                <div id="search-history-panel" class="glass p-6 rounded-3xl border border-slate-800">
+                    <h3 class="text-xs font-bold uppercase text-slate-500 tracking-widest mb-3"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Saved Search Log</h3>
+                    <div id="search-history-entries" class="space-y-2">
+                        <p class="text-xs text-slate-500 italic">No searches recorded yet.</p>
+                    </div>
+                </div>
+
+                <div id="search-results" class="grid grid-cols-1 gap-4 pb-20"></div>
+            </div>
+        </section>
+
+        <!-- Tab: Screening -->
+        <section id="tab-screen" class="tab-content h-full flex flex-col hidden" role="tabpanel" aria-labelledby="btn-tab-screen">
+            <div class="h-16 border-b border-slate-800 bg-slate-950 flex items-center justify-between px-8 shrink-0">
+                <div class="flex items-center gap-10">
+                    <div class="text-sm font-bold opacity-80 uppercase tracking-widest text-emerald-400">Review Queue: <span id="screen-count">0</span></div>
+                    <div class="flex gap-6">
+                        <button onclick="ScreenEngine.toggleFilter('all')" class="text-[10px] font-bold uppercase opacity-50 hover:opacity-100 transition-all border-b-2 border-transparent pb-1" id="sf-all">Show All</button>
+                        <button onclick="ScreenEngine.toggleFilter('include')" class="text-[10px] font-bold uppercase opacity-50 hover:opacity-100 transition-all border-b-2 border-transparent pb-1" id="sf-include">Show Included</button>
+                        <button onclick="ScreenEngine.toggleFilter('exclude')" class="text-[10px] font-bold uppercase opacity-50 hover:opacity-100 transition-all border-b-2 border-transparent pb-1" id="sf-exclude">Show Excluded</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-[9px] text-slate-600 font-mono mr-2" aria-hidden="true">N/P = nav | C = confirm</span>
+                    <button onclick="ScreenEngine.resolve('include')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95" aria-keyshortcuts="i">Propose Include (I)</button>
+                    <button onclick="ScreenEngine.resolve('exclude')" class="bg-rose-600 hover:bg-rose-500 px-5 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95" aria-keyshortcuts="e">Propose Exclude (E)</button>
+                    <button onclick="ScreenEngine.confirmCurrentDecision()" class="bg-sky-600 hover:bg-sky-500 px-5 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95" aria-keyshortcuts="c">2nd Confirm (C)</button>
+                    <button onclick="ScreenEngine.bulkDoubleScreenSignoff()" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95"><i class="fa-solid fa-users mr-1"></i>Double Screener (All)</button>
+                </div>
+            </div>
+            <div id="screen-metrics-bar" class="hidden h-8 bg-slate-900/50 border-b border-slate-800 flex items-center px-8 gap-6 text-[9px] font-mono text-slate-500 shrink-0"></div>
+            <div class="flex-1 flex overflow-hidden">
+                <div class="w-[450px] border-r border-slate-800 overflow-y-auto bg-slate-950 divide-y divide-slate-900 shadow-2xl" id="screen-list"></div>
+                <div class="flex-1 p-12 overflow-y-auto bg-slate-900/20" id="screen-detail"></div>
+            </div>
+        </section>
+
+        <!-- Tab: Extraction -->
+        <section id="tab-extract" class="tab-content h-full p-8 overflow-y-auto hidden" role="tabpanel" aria-labelledby="btn-tab-extract">
+            <div class="max-w-5xl mx-auto space-y-8">
+                <div class="flex justify-between items-center bg-slate-900/50 p-8 rounded-3xl border border-slate-800 shadow-xl text-white">
+                    <div class="flex items-center gap-6">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-600/20 flex items-center justify-center text-amber-400"><i class="fa-solid fa-check-double text-2xl"></i></div>
+                        <div><h2 class="text-xl font-bold">Extraction & Source Verification</h2><p class="text-xs opacity-50 mt-1">Interactive truth capture with highlighted registry denominators.</p></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="ExtractEngine.runPrecision()" class="bg-blue-600 hover:bg-blue-500 text-white px-10 py-3 rounded-2xl text-sm font-bold shadow-xl transition-all"><i class="fa-solid fa-bolt-lightning mr-2"></i> Extract & Verify Evidence</button>
+                        <button onclick="ExtractEngine.bulkDoubleExtractSignoff()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-xl transition-all"><i class="fa-solid fa-people-group mr-2"></i>Double Extractor (All)</button>
+                    </div>
+                </div>
+
+                <!-- Extract Mode Selector -->
+                <div class="flex gap-3 items-center px-2">
+                    <span class="text-[10px] font-bold uppercase tracking-widest opacity-40">View:</span>
+                    <button onclick="ExtractEngine.setView('data')" class="extract-view-btn text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border transition-all" data-view="data">Data Entry</button>
+                    <button onclick="ExtractEngine.setView('demographics')" class="extract-view-btn text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border transition-all" data-view="demographics">Demographics</button>
+                    <button onclick="ExtractEngine.setView('rob')" class="extract-view-btn text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border transition-all" data-view="rob">Risk of Bias</button>
+                </div>
+
+                <!-- v10.0: Manual Study Entry Form (collapsible) -->
+                <div id="manual-entry-section">
+                    <div class="collapsible-header" onclick="document.getElementById('manual-form-body').classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-plus text-blue-400" style="font-size:12px"></i>
+                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Add Study Manually</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-slate-500" style="font-size:10px"></i>
+                    </div>
+                    <div id="manual-form-body" class="hidden mt-3 glass p-6 rounded-2xl border border-slate-800">
+                        <div class="manual-form-grid">
+                            <div><label>Study Name *</label><input id="mf-name" type="text" placeholder="e.g. FIDELIO-DKD"></div>
+                            <div><label>Year</label><input id="mf-year" type="number" placeholder="2024" min="1990" max="2030"></div>
+                            <div><label>Phase</label><select id="mf-phase"><option value="III">Phase III</option><option value="IV">Phase IV</option></select></div>
+                            <div><label>AF Phenotype</label><select id="mf-indication"><option value="Paroxysmal AF">Paroxysmal AF</option><option value="Persistent AF">Persistent AF</option><option value="Other">Other</option></select></div>
+                            <div><label>Events (Tx) *</label><input id="mf-te" type="number" min="0" placeholder="0"></div>
+                            <div><label>N (Tx) *</label><input id="mf-tn" type="number" min="1" placeholder="0"></div>
+                            <div><label>Events (Ctrl) *</label><input id="mf-ce" type="number" min="0" placeholder="0"></div>
+                            <div><label>N (Ctrl) *</label><input id="mf-cn" type="number" min="1" placeholder="0"></div>
+                            <div class="col-span-full"><label>Source / Reference</label><input id="mf-source" type="text" placeholder="e.g. NEJM 2024;391:1234-45"></div>
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <button onclick="ExtractEngine.addManualStudy()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all"><i class="fa-solid fa-plus mr-2"></i>Add Study</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Entry View -->
+                <div id="extract-view-data" class="space-y-4"></div>
+
+                <!-- Demographics View -->
+                <div id="extract-view-demographics" class="hidden space-y-4"></div>
+
+                <!-- RoB View -->
+                <div id="extract-view-rob" class="hidden space-y-4"></div>
+
+                <!-- v10.0: Audit / Update Log (collapsible) -->
+                <div class="mt-6">
+                    <div class="collapsible-header" onclick="document.getElementById('audit-log-body').classList.toggle('hidden'); this.querySelector('.fa-chevron-down, .fa-chevron-up').classList.toggle('fa-chevron-down'); this.querySelector('.fa-chevron-down, .fa-chevron-up').classList.toggle('fa-chevron-up');">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-clock-rotate-left text-amber-400" style="font-size:12px"></i>
+                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Audit Log</span>
+                            <span id="audit-count" class="text-[9px] font-mono text-slate-600 bg-slate-800 px-2 py-0.5 rounded-full">0</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-slate-500" style="font-size:10px"></i>
+                    </div>
+                    <div id="audit-log-body" class="hidden mt-3 glass p-4 rounded-2xl border border-slate-800 max-h-64 overflow-y-auto">
+                        <div id="audit-log-entries" class="text-slate-400 text-xs italic">No actions recorded yet.</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6 mt-4 px-4 text-[10px] font-bold uppercase tracking-widest opacity-50">
+                    <span>RoB Legend (click to cycle):</span>
+                    <span class="flex items-center gap-1"><div class="rob-circle rob-low"></div> Low</span>
+                    <span class="flex items-center gap-1"><div class="rob-circle rob-some"></div> Some concerns</span>
+                    <span class="flex items-center gap-1"><div class="rob-circle rob-high"></div> High</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab: Analysis -->
+        <section id="tab-analysis" class="tab-content h-full p-10 overflow-y-auto hidden" role="tabpanel" aria-labelledby="btn-tab-analysis">
+            <div class="max-w-[1600px] mx-auto space-y-10 pb-20">
+                <div class="grid grid-cols-3 gap-8">
+                    <div class="glass p-8 rounded-[40px] border-l-[8px] border-blue-500 bg-blue-500/5 text-center"><div id="label-pooled-em" class="text-[10px] opacity-50 uppercase font-bold mb-3 tracking-[0.2em]">Pooled Odds Ratio (Random-Effects)</div><div id="res-or" class="text-6xl font-bold font-mono tracking-tighter">--</div></div>
+                    <!-- label updated dynamically by setEffectMeasure/updateEMLabels -->
+                    <div class="glass p-8 rounded-[40px] border-l-[8px] border-emerald-500 bg-emerald-500/5 text-center"><div id="res-ci-label" class="text-[10px] opacity-50 uppercase font-bold mb-3 tracking-[0.2em]">Precision (95% CI)</div><div id="res-ci" class="text-2xl font-bold font-mono mt-4 tracking-tight leading-none">--</div></div>
+                    <div class="glass p-8 rounded-[40px] border-l-[8px] border-amber-500 bg-amber-500/5 text-center"><div class="text-[10px] opacity-50 uppercase font-bold mb-3 tracking-[0.2em]">Heterogeneity (I²)</div><div id="res-i2" class="text-6xl font-bold font-mono tracking-tighter">--</div></div>
+                </div>
+
+                <!-- v10.0: Secondary stat cards -->
+                <div class="grid grid-cols-3 gap-8">
+                    <div class="glass p-6 rounded-[30px] border border-slate-800 text-center"><div class="text-[10px] opacity-50 uppercase font-bold mb-2 tracking-[0.2em]">HKSJ-Adjusted CI</div><div id="res-hksj" class="text-lg font-bold font-mono tracking-tight text-cyan-400">--</div></div>
+                    <div class="glass p-6 rounded-[30px] border border-slate-800 text-center"><div class="text-[10px] opacity-50 uppercase font-bold mb-2 tracking-[0.2em]">Prediction Interval</div><div id="res-pi" class="text-lg font-bold font-mono tracking-tight text-purple-400">--</div></div>
+                    <div class="glass p-6 rounded-[30px] border border-slate-800 text-center"><div class="text-[10px] opacity-50 uppercase font-bold mb-2 tracking-[0.2em]">Q-test (Cochran)</div><div id="res-qtest" class="text-lg font-bold font-mono tracking-tight text-amber-400">--</div></div>
+                </div>
+
+                <!-- v11.0: Bayesian + Power stat cards -->
+                <div class="grid grid-cols-3 gap-8">
+                    <div class="glass p-6 rounded-[30px] border border-purple-500/20 bg-purple-500/5 text-center"><div class="text-[10px] opacity-50 uppercase font-bold mb-2 tracking-[0.2em]">Bayesian CrI</div><div id="res-bayes-cri" class="text-lg font-bold font-mono tracking-tight text-purple-400">--</div></div>
+                    <div class="glass p-6 rounded-[30px] border border-purple-500/20 bg-purple-500/5 text-center"><div id="label-bayes-prob" class="text-[10px] opacity-50 uppercase font-bold mb-2 tracking-[0.2em]">P(OR &lt; 1)</div><div id="res-bayes-prob" class="text-lg font-bold font-mono tracking-tight text-purple-400">--</div></div>
+                    <div class="glass p-6 rounded-[30px] border border-slate-800 text-center"><div class="text-[10px] opacity-50 uppercase font-bold mb-2 tracking-[0.2em]">Information Fraction</div><div id="res-info-frac" class="text-lg font-bold font-mono tracking-tight text-pink-400">--</div></div>
+                </div>
+
+                <!-- v11.0: Prior sensitivity + Covariate selector -->
+                <div class="flex flex-wrap items-center gap-6 px-2">
+                    <div class="flex items-center gap-2" role="radiogroup" aria-label="Bayesian prior sensitivity">
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Bayesian Prior:</span>
+                        <button onclick="RapidMeta.setBayesPrior('informative')" class="prior-btn active" data-prior="informative" role="radio" aria-checked="true" aria-label="Informative prior">Informative</button>
+                        <button onclick="RapidMeta.setBayesPrior('vague')" class="prior-btn" data-prior="vague" role="radio" aria-checked="false" aria-label="Vague prior (Turner 2012)">Vague</button>
+                        <button onclick="RapidMeta.setBayesPrior('flat')" class="prior-btn" data-prior="flat" role="radio" aria-checked="false" aria-label="Flat non-informative prior">Flat</button>
+                    </div>
+                    <div class="h-6 w-px bg-slate-800"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Meta-Regression:</span>
+                        <select id="metareg-covariate" onchange="AnalysisEngine.run()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-[10px] font-bold text-slate-300 outline-none">
+                            <option value="year">Year</option>
+                            <option value="phase">Phase</option>
+                            <option value="indication">AF Phenotype</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- v10.0: Stat chips (Egger's + Fragility + v11.0: Trim-Fill + Copas + RIS) -->
+                <div class="flex flex-wrap gap-3 px-2" id="stat-chips-row">
+                    <div class="stat-chip stat-chip-blue" id="chip-egger"><i class="fa-solid fa-chart-line" style="font-size:10px"></i> Egger's: --</div>
+                    <div class="stat-chip stat-chip-blue" id="chip-fragility"><i class="fa-solid fa-shield-halved" style="font-size:10px"></i> Fragility: --</div>
+                    <div class="stat-chip stat-chip-blue" id="chip-trimfill"><i class="fa-solid fa-fill-drip" style="font-size:10px"></i> Trim-Fill: --</div>
+                    <div class="stat-chip stat-chip-blue" id="chip-copas"><i class="fa-solid fa-lock" style="font-size:10px"></i> Copas: --</div>
+                    <div class="stat-chip stat-chip-blue" id="chip-ris"><i class="fa-solid fa-bolt" style="font-size:10px"></i> RIS: --</div>
+                    <div class="stat-chip stat-chip-blue" id="chip-hr-sensitivity"><i class="fa-solid fa-clock-rotate-left" style="font-size:10px"></i> HR Sensitivity: --</div>
+                </div>
+
+                <div class="glass p-8 rounded-[40px] border border-slate-800 shadow-xl">
+                    <h3 class="font-bold opacity-50 uppercase text-xs tracking-[0.3em] mb-6 text-center flex items-center justify-center gap-4">
+                        <span class="w-10 h-px bg-slate-700"></span> Study Characteristics <span class="w-10 h-px bg-slate-700"></span>
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-[11px]" id="demographics-table">
+                            <thead class="bg-slate-950/60 text-[9px] uppercase font-bold tracking-widest opacity-60">
+                                <tr>
+                                    <th class="p-3 border-b border-slate-800">Trial</th>
+                                    <th class="p-3 border-b border-slate-800">Year</th>
+                                    <th class="p-3 border-b border-slate-800">Phase</th>
+                                    <th class="p-3 border-b border-slate-800">AF Phenotype</th>
+                                    <th class="p-3 border-b border-slate-800 text-right">N (Tx)</th>
+                                    <th class="p-3 border-b border-slate-800 text-right">N (Ctrl)</th>
+                                    <th class="p-3 border-b border-slate-800 text-right">ER Tx%</th>
+                                    <th class="p-3 border-b border-slate-800 text-right">ER Ctrl%</th>
+                                    <th class="p-3 border-b border-slate-800 text-center">RoB</th>
+                                </tr>
+                            </thead>
+                            <tbody id="demographics-body" class="divide-y divide-slate-800/50"></tbody>
+                            <tfoot id="demographics-footer" class="border-t-2 border-slate-700"></tfoot>
+                        </table>
+                    </div>
+                    <p class="text-[9px] text-slate-500 italic mt-3 px-2">ER = Event Rate. Values extracted from registry records — verify against published manuscripts before finalizing.</p>
+                </div>
+
+                <div class="glass p-10 rounded-[40px] border border-slate-800 shadow-2xl">
+                    <h3 class="font-bold opacity-50 uppercase text-xs tracking-[0.3em] mb-10 text-center flex items-center justify-center gap-4">
+                        <span class="w-10 h-px bg-slate-700"></span> Precision Analytics Suite <span class="w-10 h-px bg-slate-700"></span>
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">1. Forest Plot (Fixed/Random Effects)</h4><button class="chart-dl-btn" onclick="downloadChart('plot-forest','forest')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-forest" class="chart-container" aria-describedby="desc-forest"></div><div id="desc-forest" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">2. Subgroup Synthesis</h4><button class="chart-dl-btn" onclick="downloadChart('plot-subgroup','subgroup')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-subgroup" class="chart-container" aria-describedby="desc-subgroup"></div><div id="desc-subgroup" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">3. Cumulative Meta-Analysis</h4><button class="chart-dl-btn" onclick="downloadChart('plot-cumulative','cumulative')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-cumulative" class="chart-container" aria-describedby="desc-cumulative"></div><div id="desc-cumulative" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">4. Cumulative Z-Curve Analysis</h4><button class="chart-dl-btn" onclick="downloadChart('plot-tsa','zcurve')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-tsa" class="chart-container" aria-describedby="desc-tsa"></div><div id="desc-tsa" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">5. Leave-One-Out Sensitivity</h4><button class="chart-dl-btn" onclick="downloadChart('plot-loo','leave_one_out')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-loo" class="chart-container" aria-describedby="desc-loo"></div><div id="desc-loo" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">6. L'Abbe Plot (Event Incidence)</h4><button class="chart-dl-btn" onclick="downloadChart('plot-labbe','labbe')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-labbe" class="chart-container" aria-describedby="desc-labbe"></div><div id="desc-labbe" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">7. Galbraith Plot (Heterogeneity Check)</h4><button class="chart-dl-btn" onclick="downloadChart('plot-galbraith','galbraith')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-galbraith" class="chart-container" aria-describedby="desc-galbraith"></div><div id="desc-galbraith" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">8. Clinical Utility (NNT Curve)</h4><button class="chart-dl-btn" onclick="downloadChart('plot-nnt','nnt')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-nnt" class="chart-container" aria-describedby="desc-nnt"></div><div id="desc-nnt" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">9. Funnel Plot (Publication Bias)</h4><button class="chart-dl-btn" onclick="downloadChart('plot-funnel','funnel')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-funnel" class="chart-container" aria-describedby="desc-funnel"></div><div id="desc-funnel" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">10. Baujat Plot (Influence x Heterogeneity)</h4><button class="chart-dl-btn" onclick="downloadChart('plot-baujat','baujat')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-baujat" class="chart-container" aria-describedby="desc-baujat"></div><div id="desc-baujat" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2 expert-only"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">11. Bayesian Posterior Density</h4><button class="chart-dl-btn" onclick="downloadChart('plot-posterior','bayesian_posterior')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-posterior" class="chart-container" aria-describedby="desc-posterior"></div><div id="desc-posterior" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2 expert-only"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">12. Meta-Regression</h4><button class="chart-dl-btn" onclick="downloadChart('plot-metareg','meta_regression')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-metareg" class="chart-container" aria-describedby="desc-metareg"></div><div id="desc-metareg" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2 expert-only"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">13. Copas Sensitivity Curve</h4><button class="chart-dl-btn" onclick="downloadChart('plot-copas','copas')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-copas" class="chart-container" aria-describedby="desc-copas"></div><div id="desc-copas" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2 expert-only"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">14. Conditional Power Curve</h4><button class="chart-dl-btn" onclick="downloadChart('plot-power','power_curve')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-power" class="chart-container" aria-describedby="desc-power"></div><div id="desc-power" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2 expert-only"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">15. Egger's Regression Plot</h4><button class="chart-dl-btn" onclick="downloadChart('plot-egger','egger')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-egger" class="chart-container" aria-describedby="desc-egger"></div><div id="desc-egger" class="chart-desc"></div></div>
+                        <div class="col-span-1 md:col-span-2 expert-only"><div class="chart-header mb-2 px-2"><h4 class="text-[10px] opacity-70 font-bold uppercase tracking-widest">16. Risk of Bias Summary</h4><button class="chart-dl-btn" onclick="downloadChart('plot-rob-bar','rob_summary')" title="Download as SVG"><i class="fa-solid fa-download"></i></button></div><div id="plot-rob-bar" class="chart-container" style="height:250px;" aria-describedby="desc-rob"></div><div id="desc-rob" class="chart-desc"></div></div>
+                    </div>
+                </div>
+
+                <!-- v11.0: Patient Mode Summary (hidden by default, shown in patient mode) -->
+                <div class="patient-summary glass p-10 rounded-[40px] border border-purple-500/20 bg-purple-500/5">
+                    <div class="text-center space-y-6">
+                        <h3 class="text-2xl font-bold text-white">What does this mean for you?</h3>
+                        <div class="flex justify-center"><div id="patient-traffic-light" class="patient-traffic-light patient-tl-green"></div></div>
+                        <div id="patient-headline" class="text-2xl font-bold text-white"></div>
+                        <div id="patient-plain-text" class="text-base text-slate-300 leading-relaxed max-w-2xl mx-auto" style="font-family: Georgia, serif;"></div>
+                        <div id="patient-nnt-visual" class="text-lg font-mono font-bold text-blue-400"></div>
+                        <p class="text-[10px] text-slate-500 italic mt-4">This is a summary for general understanding. Always discuss with your healthcare provider.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-12 gap-8 mt-8">
+                    <div class="col-span-5 space-y-6">
+                        <div class="glass p-8 rounded-[30px] border border-slate-800 bg-slate-950/50"><h3 class="text-xs font-bold opacity-40 uppercase tracking-widest mb-6">9. Quality Appraisal (RoB 2.0)</h3><div id="rob-traffic-lights" class="space-y-4"></div></div>
+                        <!-- ISSUE 6 FIX: GRADE now populated dynamically -->
+                        <div class="glass p-8 rounded-[30px] border border-emerald-500/20 bg-emerald-500/5"><h3 class="text-xs font-bold opacity-40 uppercase tracking-widest mb-4">10. Evidence Summary (GRADE)</h3><div id="grade-container" class="space-y-3"></div></div>
+                    </div>
+                    <div class="col-span-7 glass p-8 rounded-[30px] border border-slate-800 bg-blue-600/5 flex flex-col">
+                        <div class="flex justify-between items-center mb-6"><h3 class="font-bold opacity-40 uppercase text-xs tracking-[0.3em]">TruthCert R-Metafor Script (DL Model)</h3><button onclick="AnalysisEngine.copyRCode()" class="text-[10px] font-bold text-blue-400 uppercase bg-blue-400/10 px-6 py-2 rounded-full border border-blue-400/20 transition-all hover:bg-blue-400/20">Copy R script</button></div>
+                        <div class="code-block text-[10px] leading-relaxed flex-1 max-h-96 overflow-y-auto shadow-inner" id="r-code-text"></div>
+                    </div>
+                </div>
+                <!-- R Validation Panel -->
+                <div class="glass p-8 rounded-[30px] border border-emerald-500/20 bg-emerald-500/5 mt-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-bold opacity-40 uppercase text-xs tracking-[0.3em]">Reference Cross-Validation</h3>
+                        <button onclick="AnalysisEngine.runRValidation()" class="text-[10px] font-bold text-emerald-400 uppercase bg-emerald-400/10 px-6 py-2 rounded-full border border-emerald-400/20 transition-all hover:bg-emerald-400/20">Validate</button>
+                    </div>
+                    <div id="r-validation-results" class="text-xs text-slate-400 italic">Click "Validate" after running the analysis to compare the current result against the stored harmonized reference baseline.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab: Report -->
+        <section id="tab-report" class="tab-content h-full p-10 overflow-y-auto hidden text-white" role="tabpanel" aria-labelledby="btn-tab-report">
+            <div class="max-w-6xl mx-auto space-y-10 pb-20">
+                <div class="flex justify-between items-center bg-slate-900/50 p-8 rounded-3xl border border-slate-800">
+                    <div class="flex items-center gap-6">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-600/20 flex items-center justify-center text-purple-400"><i class="fa-solid fa-pen-nib text-2xl"></i></div>
+                        <div><h2 class="text-xl font-bold">Scientific Synthesis</h2><p class="text-xs opacity-50 mt-1 uppercase font-bold tracking-widest">Generating Visual Abstract & PRISMA Diagram...</p></div>
+                    </div>
+                    <button onclick="ReportEngine.generate()" class="bg-purple-600 hover:bg-purple-500 text-white px-10 py-3 rounded-2xl text-sm font-bold shadow-xl transition-all">Generate Output</button>
+                </div>
+
+                <div id="report-content" class="hidden space-y-12">
+                    <div id="visual-abstract-container">
+                        <div class="va-card shadow-2xl animate-in zoom-in duration-700">
+                            <div class="va-header"><h2 class="text-2xl font-bold uppercase tracking-tight">Cryoballoon Ablation in Paroxysmal AF</h2><p class="text-xs opacity-80 mt-1 font-mono uppercase font-bold tracking-widest">Multi-source meta-analysis of landmark RCTs</p></div>
+                            <div class="va-grid">
+                                <div class="va-section space-y-8 border-r border-slate-100">
+                                    <div><div class="va-label">Patient Population</div><div class="va-value">N = <span id="va-n">--</span> Patients</div></div>
+                                    <div><div class="va-label">Acquisition Era</div><div class="va-value">Post-2015 Enrollment</div></div>
+                                </div>
+                                <div class="va-section flex flex-col justify-center items-center text-center space-y-4 bg-blue-50/80 border-r border-slate-100">
+                                    <div class="va-label">Primary MACE Result</div><div class="va-stat-main" id="va-or">--</div><div id="va-or-label" class="text-xs font-bold text-slate-600 uppercase">Odds Ratio [95% CI]</div><div class="text-sm font-mono text-blue-900 font-bold" id="va-ci">--</div>
+                                </div>
+                                <div class="va-section space-y-8">
+                                    <div><div class="va-label">Consistency (I²)</div><div class="va-value text-emerald-600" id="va-i2">--</div></div>
+                                    <div><div class="va-label">Scientific Verdict</div><div class="text-sm text-slate-800 leading-snug font-bold" id="va-verdict">--</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- v11.0: Waiting Room Charts -->
+                    <div class="wr-section glass p-6 rounded-3xl border border-emerald-500/20 bg-emerald-500/5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Waiting Room Summary</h3>
+                            <button onclick="ReportEngine.printWaitingRoom()" class="wr-print-btn text-[9px] font-bold text-emerald-400 uppercase bg-emerald-400/10 px-4 py-1.5 rounded-full border border-emerald-400/20 transition-all hover:bg-emerald-400/20"><i class="fa-solid fa-print mr-1"></i> Print</button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-6" id="wr-charts">
+                            <div class="flex items-center gap-4 flex-shrink-0">
+                                <div id="wr-icon-array" class="wr-icon-grid"></div>
+                                <div><div class="text-sm font-bold text-white" id="wr-icon-label">--/100</div><div class="text-[9px] text-slate-500 uppercase font-bold">NNT Pictogram</div></div>
+                            </div>
+                            <div class="flex items-center gap-3 flex-shrink-0">
+                                <div class="wr-gauge"><canvas id="wr-gauge-canvas" width="140" height="80"></canvas><div class="wr-gauge-label text-blue-400" id="wr-gauge-value">--%</div></div>
+                                <div><div class="text-sm font-bold text-white" id="wr-gauge-text">--%</div><div class="text-[9px] text-slate-500 uppercase font-bold">Risk Change</div></div>
+                            </div>
+                            <div class="flex items-center gap-3 flex-shrink-0">
+                                <div class="text-3xl font-black font-mono text-purple-400" id="wr-or-display">--</div>
+                                <div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" id="wr-signal-dot"></div><span class="text-[10px] font-bold uppercase tracking-widest" id="wr-signal-text">--</span></div>
+                                    <div id="wr-or-label" class="text-[9px] text-slate-500 uppercase font-bold mt-0.5">Odds Ratio</div>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-[200px]">
+                                <div class="text-xs text-slate-300 leading-relaxed" id="wr-plain-message" style="font-family: Georgia, serif;">--</div>
+                            </div>
+                        </div>
+                        <p class="text-[8px] text-slate-600 italic mt-3">For general understanding only. Discuss treatment decisions with your healthcare provider.</p>
+                    </div>
+
+                    <div class="glass p-10 rounded-[40px] border border-slate-800">
+                        <h3 class="text-sm font-bold opacity-40 uppercase tracking-[0.3em] mb-8">PRISMA 2020 Flow Diagram</h3>
+                        <div class="grid grid-cols-2 gap-12">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="text-[9px] font-bold uppercase tracking-widest text-blue-400 mb-1">Databases &amp; Registers</div>
+                                <div class="prisma-node">Records from ClinicalTrials.gov<br>(n = <span id="p-reg">--</span>)</div>
+                                <div class="w-0.5 h-3 bg-slate-700"></div>
+                                <div class="prisma-node">Records removed before screening<br>Duplicates / Ineligible<br>(n = <span id="p-reg-exc">--</span>)</div>
+                                <div class="w-0.5 h-3 bg-slate-700"></div>
+                                <div class="prisma-node">Records screened<br>(n = <span id="p-reg-scr">--</span>)</div>
+                                <div class="w-0.5 h-3 bg-slate-700"></div>
+                                <div class="prisma-node">Records excluded<br>(n = <span id="p-reg-excl2">--</span>)</div>
+                            </div>
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="text-[9px] font-bold uppercase tracking-widest text-purple-400 mb-1">Other Sources</div>
+                                <div class="prisma-node">Records from PubMed<br>(n = <span id="p-pm">--</span>)</div>
+                                <div class="w-0.5 h-3 bg-slate-700"></div>
+                                <div class="prisma-node">Records from OpenAlex<br>(n = <span id="p-oa">--</span>)</div>
+                                <div class="w-0.5 h-3 bg-slate-700"></div>
+                                <div class="prisma-node">Reference-checked trials<br>(n = <span id="p-ref">--</span>)</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center gap-3 mt-6">
+                            <div class="w-0.5 h-3 bg-slate-700"></div>
+                            <div class="prisma-node" style="width:220px">Reports assessed for eligibility<br>(n = <span id="p-scr">--</span>)</div>
+                            <div class="w-0.5 h-3 bg-slate-700"></div>
+                            <div class="prisma-node" style="width:220px">Reports excluded<br>(n = <span id="p-exc">--</span>)</div>
+                            <div class="w-0.5 h-3 bg-slate-700"></div>
+                            <div class="prisma-node" style="border-color:#22c55e; width:220px">Included in synthesis<br>(n = <span id="p-inc">--</span>)</div>
+                        </div>
+                    </div>
+
+                    <!-- NYT: Evidence Narrative -->
+                    <div class="glass p-10 rounded-[40px] border border-slate-800">
+                        <h3 class="nyt-headline text-white mb-4">The Cryoballoon Evidence</h3>
+                        <p class="nyt-subhead mb-6" id="nyt-subhead">A quantitative synthesis of landmark randomized trials.</p>
+                        <hr class="nyt-divider">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 my-8" id="nyt-key-numbers">
+                            <div class="nyt-key-number"><div class="nyt-key-value text-blue-400" id="nyt-kn-or">--</div><div id="nyt-kn-or-label" class="nyt-key-label">Pooled OR</div></div>
+                            <div class="nyt-key-number"><div class="nyt-key-value text-emerald-400" id="nyt-kn-nnt">--</div><div class="nyt-key-label">NNT</div></div>
+                            <div class="nyt-key-number"><div class="nyt-key-value text-amber-400" id="nyt-kn-i2">--</div><div class="nyt-key-label">I² Heterogeneity</div></div>
+                            <div class="nyt-key-number"><div class="nyt-key-value text-purple-400" id="nyt-kn-k">--</div><div class="nyt-key-label">Trials Included</div></div>
+                        </div>
+                        <hr class="nyt-divider">
+                        <div id="nyt-narrative" class="nyt-body nyt-dropcap mt-6"></div>
+                        <div class="nyt-annotation mt-6" id="nyt-annotation"></div>
+                    </div>
+
+                    <!-- NYT: CI Comparison Strip Chart -->
+                    <div class="glass p-10 rounded-[40px] border border-slate-800">
+                        <h3 class="text-sm font-bold opacity-40 uppercase tracking-[0.3em] mb-2">Confidence Interval Comparison</h3>
+                        <p id="ci-compare-desc" class="text-[10px] text-slate-500 mb-6">Visual comparison of estimation methods on the odds ratio scale. The pooled point estimate is identical; interval widths differ by method.</p>
+                        <div id="plot-ci-compare" class="chart-container" style="height:250px;"></div>
+                        <p class="nyt-figure-caption mt-3">Fig. — DerSimonian-Laird (standard), Hartung-Knapp-Sidik-Jonkman (adjusted), and Prediction Interval estimates</p>
+                    </div>
+
+                    <!-- NYT: Annotated Forest Plot -->
+                    <div class="glass p-10 rounded-[40px] border border-slate-800">
+                        <h3 class="text-sm font-bold opacity-40 uppercase tracking-[0.3em] mb-2">Publication-Quality Forest Plot</h3>
+                        <p class="text-[10px] text-slate-500 mb-6">Annotated forest plot with trial-level statistics and weight contributions. Suitable for manuscript figures.</p>
+                        <div id="plot-forest-nyt" class="chart-container" style="height:400px;"></div>
+                        <p class="nyt-figure-caption mt-3">Fig. — Forest plot of cryoballoon ablation vs antiarrhythmic drug therapy for atrial tachyarrhythmia recurrence (random-effects, DL estimator)</p>
+                    </div>
+
+                    <div class="glass p-10 rounded-[40px] border border-slate-800">
+                        <div class="flex justify-between items-center mb-8">
+                            <h3 class="text-sm font-bold opacity-40 uppercase tracking-[0.3em]">Summary of Findings</h3>
+                            <div class="export-dropdown" id="export-dropdown">
+                                <button onclick="toggleExportMenu()" aria-haspopup="true" aria-expanded="false" id="export-btn" class="text-[10px] font-bold text-purple-400 uppercase bg-purple-400/10 px-6 py-2 rounded-full border border-purple-400/20 transition-all hover:bg-purple-400/20"><i class="fa-solid fa-download mr-1"></i> Export <i class="fa-solid fa-chevron-down ml-1" style="font-size:8px"></i></button>
+                                <div class="export-dropdown-content" role="menu" aria-label="Export options">
+                                    <div class="export-dropdown-item" role="menuitem" tabindex="-1" onclick="ReportEngine.exportCSV()" onkeydown="exportMenuKey(event,this)"><i class="fa-solid fa-file-csv text-emerald-400"></i> CSV Data</div>
+                                    <div class="export-dropdown-item" role="menuitem" tabindex="-1" onclick="ReportEngine.exportJSON()" onkeydown="exportMenuKey(event,this)"><i class="fa-solid fa-code text-blue-400"></i> JSON Bundle</div>
+                                    <div class="export-dropdown-item" role="menuitem" tabindex="-1" onclick="ReportEngine.exportHTML()" onkeydown="exportMenuKey(event,this)"><i class="fa-solid fa-file-code text-purple-400"></i> HTML Report</div>
+                                    <div class="export-dropdown-item" role="menuitem" tabindex="-1" onclick="ReportEngine.exportPython()" onkeydown="exportMenuKey(event,this)"><i class="fa-brands fa-python text-yellow-400"></i> Python Script</div>
+                                    <div class="export-dropdown-item" role="menuitem" tabindex="-1" onclick="ReportEngine.exportPRISMA()" onkeydown="exportMenuKey(event,this)"><i class="fa-solid fa-list-check text-cyan-400"></i> PRISMA Checklist</div>
+                                    <div class="export-dropdown-item" role="menuitem" tabindex="-1" onclick="ReportEngine.exportTrialsCSV()" onkeydown="exportMenuKey(event,this)"><i class="fa-solid fa-table text-rose-400"></i> Trial Data (2x2)</div>
+                                    <div class="export-dropdown-item" role="menuitem" tabindex="-1" onclick="AnalysisEngine.copyRCode()" onkeydown="exportMenuKey(event,this)"><i class="fa-solid fa-terminal text-green-400"></i> Copy R Script</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-[11px]">
+                                <thead class="bg-slate-950/60 text-[9px] uppercase font-bold tracking-widest opacity-60">
+                                    <tr>
+                                        <th class="p-3 border-b border-slate-700">Outcome</th>
+                                        <th class="p-3 border-b border-slate-700 text-right">No. Trials</th>
+                                        <th class="p-3 border-b border-slate-700 text-right">Total N</th>
+                                        <th id="sof-effect-header" class="p-3 border-b border-slate-700 text-right">Effect (OR)</th>
+                                        <th id="sof-ci-header" class="p-3 border-b border-slate-700 text-right">95% CI</th>
+                                        <th class="p-3 border-b border-slate-700 text-right">I²</th>
+                                        <th class="p-3 border-b border-slate-700 text-center">GRADE</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sof-body" class="divide-y divide-slate-800/50"></tbody>
+                            </table>
+                        </div>
+                        <p class="text-[9px] text-slate-500 italic mt-3 px-2">SoF table follows GRADE Working Group recommendations. Verify values against R validation script output.</p>
+                    </div>
+
+                    <!-- v11.0: Version Timeline -->
+                    <div class="glass p-10 rounded-[40px] border border-slate-800">
+                        <h3 class="text-sm font-bold opacity-40 uppercase tracking-[0.3em] mb-6">Version Timeline</h3>
+                        <div id="version-timeline" class="version-timeline">
+                            <div class="text-xs text-slate-500 italic">Generate a report to create the first snapshot.</div>
+                        </div>
+                    </div>
+
+                    <!-- v11.0: Data Seal -->
+                    <div id="data-seal-container" class="data-seal">
+                        <i class="fa-solid fa-fingerprint mr-1"></i> Data Seal: <span id="data-seal-hash">--</span> &middot; <span id="data-seal-time">--</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="./build/cryo_af.topic-pack.js"></script>
+    <script src="./js/rapidmeta-core.js"></script>
+</body>
+</html>

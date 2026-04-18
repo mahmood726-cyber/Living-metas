@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>RapidMeta Cardiology | Unified Evidence Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #020617;
+            --bg-card: rgba(15,23,42,0.85);
+            --bg-glass: rgba(30,41,59,0.65);
+            --border: rgba(255,255,255,0.08);
+            --border-hover: rgba(59,130,246,0.5);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --accent: #3b82f6;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --red: #ef4444;
+        }
+        [data-theme="light"] {
+            --bg-base: #f1f5f9;
+            --bg-card: rgba(255,255,255,0.9);
+            --bg-glass: rgba(248,250,252,0.85);
+            --border: rgba(0,0,0,0.1);
+            --border-hover: rgba(59,130,246,0.6);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+        [data-theme="dark"] body { background: #020617; }
+        [data-theme="light"] body { background: #f1f5f9; }
+
+        /* ── Glass card ── */
+        .glass {
+            background: var(--bg-glass);
+            backdrop-filter: blur(14px) saturate(150%);
+            -webkit-backdrop-filter: blur(14px) saturate(150%);
+            border: 1px solid var(--border);
+        }
+        [data-theme="dark"] .glass { background: rgba(15,23,42,0.75); }
+        [data-theme="light"] .glass { background: rgba(255,255,255,0.82); }
+
+        /* ── Nav ── */
+        #sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+        }
+        [data-theme="dark"] #sticky-nav { background: rgba(2,6,23,0.92); }
+        [data-theme="light"] #sticky-nav { background: rgba(241,245,249,0.92); }
+
+        .nav-link {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding: 0.35rem 0.7rem;
+            border-radius: 0.5rem;
+            transition: color 0.2s, background 0.2s;
+            white-space: nowrap;
+        }
+        .nav-link:hover, .nav-link.active { color: #3b82f6; background: rgba(59,130,246,0.1); }
+
+        /* ── Hero stat ── */
+        .hero-stat {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 1.2rem 1.6rem;
+            border-right: 1px solid var(--border);
+        }
+        .hero-stat:last-child { border-right: none; }
+
+        /* ── Drug cards ── */
+        .drug-card {
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drug-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(59,130,246,0.15);
+        }
+
+        /* ── Accordion ── */
+        .accordion-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 1.2rem;
+            border-radius: 0.75rem;
+            transition: background 0.2s;
+        }
+        .accordion-header:hover { background: rgba(59,130,246,0.06); }
+        .accordion-body { overflow: hidden; transition: max-height 0.4s ease, opacity 0.3s; }
+        .accordion-body.closed { max-height: 0; opacity: 0; }
+        .accordion-body.open { max-height: 2000px; opacity: 1; }
+        .accordion-chevron { transition: transform 0.3s; }
+        .accordion-header.open .accordion-chevron { transform: rotate(180deg); }
+
+        /* ── Table ── */
+        #data-table th {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            white-space: nowrap;
+        }
+        #data-table th:hover { color: #3b82f6; }
+        #data-table th .sort-icon { margin-left: 4px; font-size: 0.65rem; opacity: 0.5; }
+        #data-table th.sort-asc .sort-icon::after { content: '▲'; opacity: 1; color: #3b82f6; }
+        #data-table th.sort-desc .sort-icon::after { content: '▼'; opacity: 1; color: #3b82f6; }
+        #data-table th .sort-icon::after { content: '↕'; }
+        #data-table tbody tr { transition: background 0.15s; }
+        [data-theme="dark"] #data-table tbody tr:hover { background: rgba(30,41,59,0.6); }
+        [data-theme="light"] #data-table tbody tr:hover { background: rgba(59,130,246,0.06); }
+        [data-theme="dark"] #data-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
+        [data-theme="light"] #data-table tbody tr { border-bottom: 1px solid rgba(0,0,0,0.06); }
+
+        .sig-row td:first-child { border-left: 3px solid #10b981; }
+        .insig-row td:first-child { border-left: 3px solid #f59e0b; }
+
+        /* ── GRADE badges ── */
+        .grade-HIGH    { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+        .grade-MODERATE{ background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+        .grade-LOW     { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+        .grade-VERY-LOW{ background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+        /* ── Toggle switch ── */
+        .toggle-track {
+            width: 42px; height: 22px;
+            background: rgba(100,116,139,0.4);
+            border-radius: 11px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .toggle-track.on { background: #3b82f6; }
+        .toggle-thumb {
+            position: absolute;
+            top: 3px; left: 3px;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: white;
+            transition: left 0.2s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        .toggle-track.on .toggle-thumb { left: 23px; }
+
+        /* ── Plotly override ── */
+        .js-plotly-plot .plotly .user-select-none { outline: none; }
+        .modebar { display: none !important; }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.25); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.45); }
+
+        /* ── Section labels ── */
+        .section-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero-stat { padding: 0.8rem 1rem; }
+            .hero-stat:nth-child(even) { border-right: none; }
+        }
+
+        /* ── Filter bar ── */
+        .filter-input {
+            background: rgba(30,41,59,0.5);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        [data-theme="light"] .filter-input { background: rgba(255,255,255,0.8); }
+        .filter-input:focus { border-color: #3b82f6; }
+        .filter-input option { background: #0f172a; }
+        [data-theme="light"] .filter-input option { background: #fff; color: #0f172a; }
+
+        /* ── Btn ── */
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.45rem 1rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-secondary {
+            background: rgba(30,41,59,0.6);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.45rem 1rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { border-color: #3b82f6; color: #3b82f6; }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ STICKY NAV ═══════════════════════════ -->
+<nav id="sticky-nav">
+    <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-12">
+        <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+            <span class="font-bold text-sm tracking-tight">RapidMeta<span class="text-blue-400 font-normal"> Cardiology</span></span>
+        </div>
+        <div class="hidden md:flex items-center gap-1">
+            <a href="#section-hero"     class="nav-link">Overview</a>
+            <a href="#section-forest"   class="nav-link">Forest Plot</a>
+            <a href="#section-nnt"      class="nav-link">NNT</a>
+            <a href="#section-areas"    class="nav-link">Therapy Areas</a>
+            <a href="#section-bubble"   class="nav-link">Bubble Chart</a>
+            <a href="#section-network"  class="nav-link">Network</a>
+            <a href="#section-table"    class="nav-link">Table</a>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="theme-toggle" class="flex items-center gap-2 text-xs text-slate-400 hover:text-blue-400 transition-colors" title="Toggle light/dark mode">
+                <i id="theme-icon" class="fa-solid fa-moon"></i>
+            </button>
+            <button onclick="downloadEvidencePack()" class="btn-primary flex items-center gap-1.5">
+                <i class="fa-solid fa-download text-xs"></i> Evidence Pack
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+<main class="max-w-7xl mx-auto px-4 pb-16 space-y-8 pt-6">
+
+    <!-- ── Hero ── -->
+    <section id="section-hero">
+        <div class="mb-6">
+            <h1 class="text-3xl font-extrabold tracking-tight">Unified Cardiology<span class="text-blue-400"> Evidence Portal</span></h1>
+            <p class="text-sm mt-1.5" style="color:var(--text-secondary)">Pooled benchmarks from 18 validated cardiology meta-analysis engines. Click any card or chart element to open the full app.</p>
+        </div>
+
+        <!-- Hero summary bar -->
+        <div class="glass rounded-2xl overflow-hidden mb-6">
+            <div class="flex flex-wrap divide-x divide-slate-800" id="hero-stats-bar">
+                <!-- filled by JS -->
+            </div>
+        </div>
+
+        <!-- GRADE distribution bar -->
+        <div class="glass rounded-2xl p-5 mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <span class="section-label">GRADE Certainty Distribution</span>
+                <span class="text-xs" style="color:var(--text-muted)">across 18 drug classes</span>
+            </div>
+            <div class="flex rounded-lg overflow-hidden h-6" id="grade-bar"></div>
+            <div class="flex gap-5 mt-3 flex-wrap" id="grade-legend"></div>
+        </div>
+
+        <!-- Drug cards grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" id="drug-cards-grid"></div>
+    </section>
+
+    <!-- ── Forest Plot ── -->
+    <section id="section-forest">
+        <div class="glass rounded-2xl p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div>
+                    <div class="section-label mb-1"><i class="fa-solid fa-chart-bar mr-1"></i> Pooled Effect — Forest Plot</div>
+                    <p class="text-xs" style="color:var(--text-muted)">HR / OR / MD with 95% CI. Click any point to open the full app. OR-scale (Mavacamten) and MD-scale (Renal Denervation) shown separately.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 text-xs cursor-pointer" style="color:var(--text-secondary)">
+                        <div class="toggle-track on" id="toggle-sig" onclick="toggleSig(this)">
+                            <div class="toggle-thumb"></div>
+                        </div>
+                        <span id="toggle-sig-label">Show non-significant</span>
+                    </label>
+                    <select id="forest-sort" class="filter-input" onchange="renderForest()">
+                        <option value="effect">Sort by effect size</option>
+                        <option value="name">Sort by name</option>
+                        <option value="n">Sort by N</option>
+                        <option value="grade">Sort by GRADE</option>
+                    </select>
+                </div>
+            </div>
+            <!-- HR panel -->
+            <div class="section-label mb-2 pl-1 text-xs" style="color:var(--text-secondary);">HR-scale (hazard ratios)</div>
+            <div id="forest-hr" style="min-height:420px"></div>
+            <!-- OR panel -->
+            <div class="section-label mt-5 mb-2 pl-1 text-xs" style="color:var(--text-secondary);">OR-scale — Mavacamten (oHCM)</div>
+            <div id="forest-or" style="min-height:120px"></div>
+            <!-- MD panel -->
+            <div class="section-label mt-5 mb-2 pl-1 text-xs" style="color:var(--text-secondary);">MD-scale — Renal Denervation (mmHg SBP)</div>
+            <div id="forest-md" style="min-height:120px"></div>
+        </div>
+    </section>
+
+    <!-- ── NNT Chart ── -->
+    <section id="section-nnt">
+        <div class="glass rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <div class="section-label mb-1"><i class="fa-solid fa-ranking-star mr-1"></i> NNT Ranking</div>
+                    <p class="text-xs" style="color:var(--text-muted)">Number needed to treat to prevent 1 MACE event. Lower = more efficient. Classes without a reportable NNT are excluded.</p>
+                </div>
+            </div>
+            <div id="nnt-chart" style="min-height:380px"></div>
+        </div>
+    </section>
+
+    <!-- ── Therapeutic Areas ── -->
+    <section id="section-areas">
+        <div class="glass rounded-2xl p-6">
+            <div class="section-label mb-5"><i class="fa-solid fa-layer-group mr-1"></i> Therapeutic Area Grouping</div>
+            <div id="therapy-accordion" class="space-y-2"></div>
+        </div>
+    </section>
+
+    <!-- ── Bubble Chart ── -->
+    <section id="section-bubble">
+        <div class="glass rounded-2xl p-6">
+            <div class="section-label mb-1"><i class="fa-solid fa-chart-scatter mr-1"></i> Evidence Landscape — Bubble Chart</div>
+            <p class="text-xs mb-4" style="color:var(--text-muted)">X-axis: total patients (log scale). Y-axis: % risk reduction (1-HR for HR-scale entries). Bubble size: number of trials (k). Color: GRADE certainty. OR/MD entries excluded from Y-axis comparison.</p>
+            <div id="bubble-chart" style="min-height:420px"></div>
+        </div>
+    </section>
+
+    <!-- ── Network ── -->
+    <section id="section-network">
+        <div class="glass rounded-2xl p-6">
+            <div class="section-label mb-1"><i class="fa-solid fa-diagram-project mr-1"></i> Indication Network</div>
+            <p class="text-xs mb-4" style="color:var(--text-muted)">Force-directed graph: nodes = drug classes. Edges = shared therapeutic indication. Node size ∝ total N. Color = GRADE certainty.</p>
+            <div id="network-chart" style="min-height:460px"></div>
+        </div>
+    </section>
+
+    <!-- ── Table ── -->
+    <section id="section-table">
+        <div class="glass rounded-2xl p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div class="section-label"><i class="fa-solid fa-table mr-1"></i> Full Comparison Table</div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="text" id="table-search" class="filter-input" placeholder="Search drug..." oninput="renderTable()">
+                    <select id="table-grade-filter" class="filter-input" onchange="renderTable()">
+                        <option value="">All GRADE levels</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="MODERATE">MODERATE</option>
+                        <option value="LOW">LOW</option>
+                        <option value="VERY LOW">VERY LOW</option>
+                    </select>
+                    <button onclick="exportCSV()" class="btn-secondary flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv text-xs"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table id="data-table" class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left" style="color:var(--text-muted); font-size:0.65rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">
+                            <th class="p-3" data-col="name">Drug / Intervention <span class="sort-icon"></span></th>
+                            <th class="p-3" data-col="indication">Indication <span class="sort-icon"></span></th>
+                            <th class="p-3 text-right" data-col="k">k <span class="sort-icon"></span></th>
+                            <th class="p-3 text-right" data-col="n">Total N <span class="sort-icon"></span></th>
+                            <th class="p-3 text-right" data-col="hr">Effect (95% CI) <span class="sort-icon"></span></th>
+                            <th class="p-3 text-right" data-col="i2">I&#178; <span class="sort-icon"></span></th>
+                            <th class="p-3 text-center" data-col="grade">GRADE <span class="sort-icon"></span></th>
+                            <th class="p-3 text-right" data-col="nnt">NNT <span class="sort-icon"></span></th>
+                            <th class="p-3" data-col="source">Source <span class="sort-icon"></span></th>
+                            <th class="p-3 text-center">App</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+                <div id="table-empty" class="hidden text-center py-8 text-sm" style="color:var(--text-muted);">No results match your filters.</div>
+            </div>
+            <div class="mt-3 text-xs" style="color:var(--text-muted);" id="table-count"></div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="max-w-7xl mx-auto px-4 pb-6 text-center text-xs" style="color:var(--text-muted);">
+    RapidMeta Cardiology Evidence Portal &mdash; 18 validated meta-analysis engines &mdash; for research use only.
+</footer>
+
+<!-- ═══════════════════════════ JAVASCRIPT ═══════════════════════════ -->
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════════
+const DRUG_CLASSES = [
+    {
+        name: 'Finerenone',
+        file: 'FINERENONE_REVIEW.html',
+        color: '#3b82f6',
+        hr: 0.87, lci: 0.79, uci: 0.95, k: 2, n: 13026,
+        i2: 0.0, grade: 'MODERATE', nnt: 71,
+        indication: 'CKD + T2D',
+        source: 'FIDELITY pooled (Agarwal 2022)',
+        area: 'Kidney'
+    },
+    {
+        name: 'SGLT2 Inhibitors (HF)',
+        file: 'SGLT2_HF_REVIEW.html',
+        color: '#10b981',
+        hr: 0.76, lci: 0.71, uci: 0.82, k: 4, n: 21947,
+        i2: 0.0, grade: 'HIGH', nnt: 21,
+        indication: 'Heart Failure',
+        source: 'Vaduganathan 2022',
+        area: 'Heart Failure'
+    },
+    {
+        name: 'GLP-1 Receptor Agonists',
+        file: 'GLP1_CVOT_REVIEW.html',
+        color: '#f59e0b',
+        hr: 0.86, lci: 0.81, uci: 0.90, k: 10, n: 76076,
+        i2: 15.2, grade: 'HIGH', nnt: 63,
+        indication: 'T2D + High CV Risk',
+        source: 'Sattar 2021',
+        area: 'Atherosclerosis'
+    },
+    {
+        name: 'PCSK9 Inhibitors',
+        file: 'PCSK9_REVIEW.html',
+        color: '#8b5cf6',
+        hr: 0.85, lci: 0.80, uci: 0.90, k: 2, n: 46488,
+        i2: 0.0, grade: 'HIGH', nnt: 67,
+        indication: 'ASCVD + High LDL',
+        source: 'Guedeney 2020',
+        area: 'Atherosclerosis'
+    },
+    {
+        name: 'Bempedoic Acid',
+        file: 'BEMPEDOIC_ACID_REVIEW.html',
+        color: '#ec4899',
+        hr: 0.86, lci: 0.78, uci: 0.94, k: 2, n: 16200,
+        i2: 0.0, grade: 'MODERATE', nnt: 77,
+        indication: 'Statin-Intolerant',
+        source: 'CLEAR Program',
+        area: 'Atherosclerosis'
+    },
+    {
+        name: 'Colchicine',
+        file: 'COLCHICINE_CVD_REVIEW.html',
+        color: '#06b6d4',
+        hr: 0.79, lci: 0.68, uci: 0.93, k: 5, n: 11876,
+        i2: 22.1, grade: 'MODERATE', nnt: 53,
+        indication: 'Stable CAD / Post-MI',
+        source: 'COLCOT + LoDoCo2',
+        area: 'Atherosclerosis'
+    },
+    {
+        name: 'Intensive BP Control',
+        file: 'INTENSIVE_BP_REVIEW.html',
+        color: '#ef4444',
+        hr: 0.80, lci: 0.73, uci: 0.88, k: 5, n: 34823,
+        i2: 0.0, grade: 'HIGH', nnt: 61,
+        indication: 'Hypertension',
+        source: 'SPRINT + STEP + ACCORD',
+        area: 'Hypertension'
+    },
+    {
+        name: 'Omega-3 / Icosapent Ethyl',
+        file: 'LIPID_HUB_REVIEW.html',
+        color: '#84cc16',
+        hr: 0.90, lci: 0.79, uci: 1.03, k: 5, n: 52039,
+        i2: 77.1, grade: 'LOW', nnt: null,
+        indication: 'Elevated TG',
+        source: 'Khan 2021',
+        area: 'Atherosclerosis'
+    },
+    {
+        name: 'SGLT2i (CKD)',
+        file: 'SGLT2_CKD_REVIEW.html',
+        color: '#14b8a6',
+        hr: 0.68, lci: 0.62, uci: 0.75, k: 3, n: 15314,
+        i2: 17.5, grade: 'HIGH', nnt: 18,
+        indication: 'CKD (eGFR 20-75)',
+        source: 'CREDENCE + DAPA-CKD + EMPA-KIDNEY',
+        area: 'Kidney'
+    },
+    {
+        name: 'Sacubitril/Valsartan',
+        file: 'ARNI_HF_REVIEW.html',
+        color: '#a855f7',
+        hr: 0.84, lci: 0.78, uci: 0.90, k: 3, n: 18933,
+        i2: 35.0, grade: 'MODERATE', nnt: 45,
+        indication: 'Heart Failure',
+        source: 'PARADIGM-HF + PARAGON-HF + PARADISE-MI',
+        area: 'Heart Failure'
+    },
+    {
+        name: 'Catheter Ablation (AF)',
+        file: 'ABLATION_AF_REVIEW.html',
+        color: '#f97316',
+        hr: 0.77, lci: 0.68, uci: 0.87, k: 4, n: 5767,
+        i2: 8.0, grade: 'MODERATE', nnt: 28,
+        indication: 'Atrial Fibrillation',
+        source: 'CASTLE-AF + CABANA + EAST + RAFT',
+        area: 'Other'
+    },
+    {
+        name: 'IV Iron (HF)',
+        file: 'IV_IRON_HF_REVIEW.html',
+        color: '#b45309',
+        hr: 0.80, lci: 0.68, uci: 0.93, k: 3, n: 5334,
+        i2: 0.0, grade: 'MODERATE', nnt: 33,
+        indication: 'HF + Iron Deficiency',
+        source: 'AFFIRM-AHF + IRONMAN + HEART-FID',
+        area: 'Heart Failure'
+    },
+    {
+        name: 'DOACs (Cancer VTE)',
+        file: 'DOAC_CANCER_VTE_REVIEW.html',
+        color: '#dc2626',
+        hr: 0.60, lci: 0.36, uci: 1.00, k: 4, n: 2704,
+        i2: 47.0, grade: 'LOW', nnt: null,
+        indication: 'Cancer-Associated VTE',
+        source: 'HOKUSAI + SELECT-D + ADAM + CARAVAGGIO',
+        area: 'Other'
+    },
+    {
+        name: 'Mavacamten (oHCM)',
+        file: 'MAVACAMTEN_HCM_REVIEW.html',
+        color: '#e11d48',
+        hr: 6.67, lci: 2.09, uci: 21.30, k: 3, n: 444,
+        i2: 28.0, grade: 'MODERATE', nnt: 3,
+        indication: 'Obstructive HCM',
+        source: 'EXPLORER + VALOR + Chinese Ph3',
+        isOR: true,
+        area: 'Other'
+    },
+    {
+        name: 'Rivaroxaban Vascular',
+        file: 'RIVAROXABAN_VASC_REVIEW.html',
+        color: '#0ea5e9',
+        hr: 0.85, lci: 0.78, uci: 0.93, k: 4, n: 52507,
+        i2: 50.0, grade: 'MODERATE', nnt: 56,
+        indication: 'Stable Atherosclerotic Disease',
+        source: 'COMPASS + VOYAGER + COMMANDER + ATLAS',
+        area: 'Atherosclerosis'
+    },
+    {
+        name: 'Tafamidis (ATTR-CM)',
+        file: 'ATTR_CM_REVIEW.html',
+        color: '#6366f1',
+        hr: 0.70, lci: 0.51, uci: 0.96, k: 1, n: 441,
+        i2: 0, grade: 'MODERATE', nnt: 8,
+        indication: 'Transthyretin Cardiomyopathy',
+        source: 'ATTR-ACT (Maurer 2018)',
+        area: 'Heart Failure'
+    },
+    {
+        name: 'Renal Denervation',
+        file: 'RENAL_DENERV_REVIEW.html',
+        color: '#78716c',
+        hr: -5.12, lci: -6.85, uci: -3.40, k: 5, n: 1013,
+        i2: 0, grade: 'MODERATE', nnt: null,
+        indication: 'Resistant Hypertension',
+        source: 'RADIANCE + SPYRAL',
+        isMD: true, unit: 'mmHg',
+        area: 'Hypertension'
+    },
+    {
+        name: 'Semaglutide (HFpEF)',
+        file: 'INCRETIN_HFpEF_REVIEW.html',
+        color: '#fbbf24',
+        hr: 0.62, lci: 0.41, uci: 0.94, k: 1, n: 529,
+        i2: 0, grade: 'MODERATE', nnt: 12,
+        indication: 'HFpEF + Obesity',
+        source: 'STEP-HFpEF (Kosiborod 2023)',
+        area: 'Heart Failure'
+    }
+];
+
+// Therapeutic area config
+const THERAPY_AREAS = [
+    {
+        key: 'Heart Failure',
+        label: 'Heart Failure',
+        icon: 'fa-heart-pulse',
+        color: '#10b981',
+        desc: 'HFrEF, HFpEF, iron deficiency, cardiomyopathy'
+    },
+    {
+        key: 'Atherosclerosis',
+        label: 'Atherosclerosis & Lipid Management',
+        icon: 'fa-droplet',
+        color: '#f59e0b',
+        desc: 'ASCVD, LDL lowering, anti-inflammatory, omega-3'
+    },
+    {
+        key: 'Kidney',
+        label: 'Cardiorenal',
+        icon: 'fa-kidneys',
+        color: '#3b82f6',
+        desc: 'CKD with or without T2D'
+    },
+    {
+        key: 'Hypertension',
+        label: 'Hypertension',
+        icon: 'fa-gauge-high',
+        color: '#ef4444',
+        desc: 'Blood pressure targets and interventional denervation'
+    },
+    {
+        key: 'Other',
+        label: 'Other Cardiovascular',
+        icon: 'fa-stethoscope',
+        color: '#8b5cf6',
+        desc: 'AF ablation, VTE in cancer, obstructive HCM'
+    }
+];
+
+const GRADE_META = {
+    HIGH:     { color: '#10b981', bg: 'rgba(16,185,129,0.15)', label: 'HIGH' },
+    MODERATE: { color: '#60a5fa', bg: 'rgba(59,130,246,0.15)', label: 'MODERATE' },
+    LOW:      { color: '#fbbf24', bg: 'rgba(245,158,11,0.15)', label: 'LOW' },
+    'VERY LOW': { color: '#f87171', bg: 'rgba(239,68,68,0.15)', label: 'VERY LOW' }
+};
+
+// ══════════════════════════════════════════════════
+//  UTILITY
+// ══════════════════════════════════════════════════
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function isSig(d) {
+    if (d.isOR) return d.lci > 1.0;
+    if (d.isMD) return d.uci < 0;
+    return d.uci < 1.0;
+}
+
+function effectLabel(d) {
+    if (d.isOR) return 'OR';
+    if (d.isMD) return 'MD';
+    return 'HR';
+}
+
+function effectStr(d) {
+    const lbl = effectLabel(d);
+    const suffix = d.isMD ? (' ' + (d.unit || 'mmHg')) : '';
+    return lbl + ' ' + d.hr.toFixed(2) + ' (' + d.lci.toFixed(2) + '\u2013' + d.uci.toFixed(2) + ')' + suffix;
+}
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let showNonSig = true;
+let tableSortCol = 'hr';
+let tableSortDir = 'asc';
+
+// ══════════════════════════════════════════════════
+//  HERO STATS
+// ══════════════════════════════════════════════════
+function renderHeroStats() {
+    const totalN = DRUG_CLASSES.reduce((s, d) => s + d.n, 0);
+    const totalK = DRUG_CLASSES.reduce((s, d) => s + d.k, 0);
+    const gradeCounts = {};
+    DRUG_CLASSES.forEach(d => { gradeCounts[d.grade] = (gradeCounts[d.grade] || 0) + 1; });
+    const sigCount = DRUG_CLASSES.filter(d => isSig(d)).length;
+
+    const stats = [
+        { value: '18', label: 'Drug Classes', icon: 'fa-flask', color: '#3b82f6' },
+        { value: totalN.toLocaleString(), label: 'Total Patients', icon: 'fa-users', color: '#10b981' },
+        { value: totalK, label: 'Primary Trials', icon: 'fa-vials', color: '#f59e0b' },
+        { value: sigCount + '/18', label: 'Significant Results', icon: 'fa-circle-check', color: '#a855f7' },
+        { value: gradeCounts['HIGH'] || 0, label: 'HIGH GRADE', icon: 'fa-star', color: '#10b981' },
+        { value: gradeCounts['MODERATE'] || 0, label: 'MODERATE GRADE', icon: 'fa-star-half-stroke', color: '#60a5fa' },
+        { value: (gradeCounts['LOW'] || 0) + (gradeCounts['VERY LOW'] || 0), label: 'LOW / VERY LOW', icon: 'fa-triangle-exclamation', color: '#fbbf24' }
+    ];
+
+    document.getElementById('hero-stats-bar').innerHTML = stats.map(s => `
+        <div class="hero-stat flex-1 min-w-0">
+            <i class="fa-solid ${escapeHtml(s.icon)} text-lg mb-1" style="color:${escapeHtml(s.color)}"></i>
+            <div class="text-xl md:text-2xl font-extrabold tracking-tight font-mono" style="color:${escapeHtml(s.color)}">${escapeHtml(String(s.value))}</div>
+            <div class="text-[10px] font-semibold uppercase tracking-wider mt-0.5" style="color:var(--text-muted)">${escapeHtml(s.label)}</div>
+        </div>
+    `).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  GRADE BAR
+// ══════════════════════════════════════════════════
+function renderGradeBar() {
+    const counts = {};
+    DRUG_CLASSES.forEach(d => { counts[d.grade] = (counts[d.grade] || 0) + 1; });
+    const total = DRUG_CLASSES.length;
+    const order = ['HIGH','MODERATE','LOW','VERY LOW'];
+
+    document.getElementById('grade-bar').innerHTML = order
+        .filter(g => counts[g])
+        .map(g => {
+            const pct = (counts[g] / total * 100).toFixed(1);
+            const m = GRADE_META[g];
+            return `<div style="width:${pct}%; background:${m.color}; opacity:0.85" title="${g}: ${counts[g]} (${pct}%)" class="flex items-center justify-center text-[10px] font-bold text-white">${counts[g]}</div>`;
+        }).join('');
+
+    document.getElementById('grade-legend').innerHTML = order
+        .filter(g => counts[g])
+        .map(g => {
+            const m = GRADE_META[g];
+            return `<div class="flex items-center gap-1.5 text-xs"><div class="w-3 h-3 rounded-sm" style="background:${m.color}"></div><span style="color:var(--text-secondary)">${g} (${counts[g]})</span></div>`;
+        }).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  DRUG CARDS GRID
+// ══════════════════════════════════════════════════
+function renderDrugCards() {
+    document.getElementById('drug-cards-grid').innerHTML = DRUG_CLASSES.map(d => {
+        const sig = isSig(d);
+        const sigColor = sig ? '#10b981' : '#f59e0b';
+        const lbl = effectLabel(d);
+        const unit = d.isMD ? (' ' + (d.unit || 'mmHg')) : '';
+        return `<div class="drug-card glass" onclick="window.open(${JSON.stringify(d.file)},'_blank')">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${d.color}"></div>
+                <span class="text-xs font-bold leading-tight truncate" title="${escapeHtml(d.name)}">${escapeHtml(d.name)}</span>
+            </div>
+            <div class="text-base font-extrabold font-mono" style="color:${sigColor}">${d.hr.toFixed(2)}${unit}</div>
+            <div class="text-[9px] mt-0.5" style="color:var(--text-muted)">${lbl} (${d.lci.toFixed(2)}\u2013${d.uci.toFixed(2)})</div>
+            <div class="flex items-center justify-between mt-2">
+                <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold grade-${escapeHtml(d.grade.replace(' ','-'))}">${escapeHtml(d.grade)}</span>
+                <span class="text-[9px]" style="color:var(--text-muted)">k=${d.k}</span>
+            </div>
+            <div class="text-[8px] mt-1 truncate" style="color:var(--text-muted)" title="${escapeHtml(d.indication)}">${escapeHtml(d.indication)}</div>
+        </div>`;
+    }).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  FOREST PLOT
+// ══════════════════════════════════════════════════
+function toggleSig(el) {
+    showNonSig = !showNonSig;
+    el.classList.toggle('on', showNonSig);
+    renderForest();
+}
+
+function forestSortFn(a, b) {
+    const sortBy = document.getElementById('forest-sort').value;
+    const gradeOrder = { HIGH: 0, MODERATE: 1, LOW: 2, 'VERY LOW': 3 };
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'n') return b.n - a.n;
+    if (sortBy === 'grade') return (gradeOrder[a.grade] || 0) - (gradeOrder[b.grade] || 0);
+    return a.hr - b.hr; // effect size
+}
+
+function renderForest() {
+    const darkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const axColor = darkMode ? '#94a3b8' : '#475569';
+    const gridColor = darkMode ? 'rgba(30,41,59,0.6)' : 'rgba(203,213,225,0.6)';
+    const paperBg = 'transparent';
+    const plotBg = 'transparent';
+
+    // HR panel (exclude OR and MD)
+    let hrData = DRUG_CLASSES.filter(d => !d.isOR && !d.isMD);
+    if (!showNonSig) hrData = hrData.filter(d => isSig(d));
+    hrData = hrData.sort(forestSortFn);
+
+    const hrTraces = hrData.map(d => {
+        const sig = isSig(d);
+        return {
+            x: [Math.log(d.hr)],
+            y: [d.name + ' (k=' + d.k + ', N=' + d.n.toLocaleString() + ')'],
+            mode: 'markers',
+            error_x: {
+                type: 'data',
+                array: [Math.log(d.uci) - Math.log(d.hr)],
+                arrayminus: [Math.log(d.hr) - Math.log(d.lci)],
+                color: sig ? d.color : '#64748b',
+                thickness: 2.5, width: 6
+            },
+            marker: {
+                color: sig ? d.color : '#64748b',
+                size: 12 + Math.min(d.k * 1.5, 8),
+                symbol: 'diamond',
+                line: { color: 'rgba(255,255,255,0.3)', width: 1 }
+            },
+            showlegend: false,
+            customdata: [d.file],
+            hovertemplate: '<b>' + escapeHtml(d.name) + '</b><br>HR: ' + d.hr.toFixed(2) +
+                ' (' + d.lci.toFixed(2) + '\u2013' + d.uci.toFixed(2) + ')<br>' +
+                'k=' + d.k + ', N=' + d.n.toLocaleString() + '<br>GRADE: ' + d.grade +
+                '<extra></extra>'
+        };
+    });
+
+    const xMin = Math.min(...hrData.map(d => Math.log(d.lci))) - 0.1;
+    const xMax = Math.max(...hrData.map(d => Math.log(d.uci))) + 0.1;
+
+    const hrLayout = {
+        paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+        xaxis: {
+            title: 'log(HR)', color: axColor, gridcolor: gridColor,
+            zeroline: true, zerolinecolor: '#ef4444', zerolinewidth: 2,
+            range: [xMin, xMax]
+        },
+        yaxis: { color: axColor, autorange: 'reversed', tickfont: { size: 11 } },
+        margin: { l: 280, r: 60, t: 10, b: 50 },
+        height: Math.max(320, hrData.length * 36 + 60),
+        shapes: [{ type: 'line', x0: 0, x1: 0, y0: -0.5, y1: hrData.length - 0.5, line: { color: '#ef4444', dash: 'dot', width: 1.5 } }],
+        annotations: [
+            { x: xMin + 0.05, y: hrData.length - 0.1, text: '<b>Favors Treatment</b>', showarrow: false, font: { size: 9, color: '#22c55e' }, xanchor: 'left' },
+            { x: xMax - 0.05, y: hrData.length - 0.1, text: '<b>Favors Control</b>', showarrow: false, font: { size: 9, color: '#ef4444' }, xanchor: 'right' }
+        ],
+        font: { family: 'Inter, sans-serif' }
+    };
+
+    Plotly.react('forest-hr', hrTraces, hrLayout, { responsive: true, displayModeBar: false });
+
+    // Click to open app
+    const hrDiv = document.getElementById('forest-hr');
+    hrDiv.on('plotly_click', function(data) {
+        if (data.points && data.points[0] && data.points[0].customdata) {
+            window.open(data.points[0].customdata, '_blank');
+        }
+    });
+
+    // OR panel (Mavacamten only)
+    const orData = DRUG_CLASSES.filter(d => d.isOR);
+    const orTraces = orData.map(d => ({
+        x: [Math.log(d.hr)],
+        y: [d.name],
+        mode: 'markers',
+        error_x: {
+            type: 'data',
+            array: [Math.log(d.uci) - Math.log(d.hr)],
+            arrayminus: [Math.log(d.hr) - Math.log(d.lci)],
+            color: d.color, thickness: 2.5, width: 6
+        },
+        marker: { color: d.color, size: 14, symbol: 'diamond', line: { color: 'rgba(255,255,255,0.3)', width: 1 } },
+        showlegend: false,
+        customdata: [d.file],
+        hovertemplate: '<b>' + escapeHtml(d.name) + '</b><br>OR: ' + d.hr.toFixed(2) +
+            ' (' + d.lci.toFixed(2) + '\u2013' + d.uci.toFixed(2) + ')<br>' +
+            'k=' + d.k + ', N=' + d.n.toLocaleString() + '<extra></extra>'
+    }));
+    Plotly.react('forest-or', orTraces, {
+        paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+        xaxis: { title: 'log(OR)', color: axColor, gridcolor: gridColor, zeroline: true, zerolinecolor: '#ef4444', zerolinewidth: 2 },
+        yaxis: { color: axColor, tickfont: { size: 11 } },
+        margin: { l: 180, r: 60, t: 10, b: 45 },
+        height: 100,
+        font: { family: 'Inter, sans-serif' }
+    }, { responsive: true, displayModeBar: false });
+    document.getElementById('forest-or').on('plotly_click', function(data) {
+        if (data.points && data.points[0] && data.points[0].customdata) {
+            window.open(data.points[0].customdata, '_blank');
+        }
+    });
+
+    // MD panel (Renal Denervation)
+    const mdData = DRUG_CLASSES.filter(d => d.isMD);
+    const mdTraces = mdData.map(d => ({
+        x: [d.hr],
+        y: [d.name],
+        mode: 'markers',
+        error_x: {
+            type: 'data',
+            array: [d.uci - d.hr],
+            arrayminus: [d.hr - d.lci],
+            color: d.color, thickness: 2.5, width: 6
+        },
+        marker: { color: d.color, size: 14, symbol: 'diamond', line: { color: 'rgba(255,255,255,0.3)', width: 1 } },
+        showlegend: false,
+        customdata: [d.file],
+        hovertemplate: '<b>' + escapeHtml(d.name) + '</b><br>MD: ' + d.hr.toFixed(2) +
+            ' mmHg (' + d.lci.toFixed(2) + '\u2013' + d.uci.toFixed(2) + ')<br>' +
+            'k=' + d.k + ', N=' + d.n.toLocaleString() + '<extra></extra>'
+    }));
+    Plotly.react('forest-md', mdTraces, {
+        paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+        xaxis: { title: 'MD (mmHg)', color: axColor, gridcolor: gridColor, zeroline: true, zerolinecolor: '#ef4444', zerolinewidth: 2 },
+        yaxis: { color: axColor, tickfont: { size: 11 } },
+        margin: { l: 180, r: 60, t: 10, b: 45 },
+        height: 100,
+        annotations: [
+            { x: -0.5, y: 0.8, text: '<b>Favors Treatment</b>', showarrow: false, font: { size: 9, color: '#22c55e' }, xanchor: 'right', yref: 'paper' },
+            { x: 0.5,  y: 0.8, text: '<b>Favors Control</b>',  showarrow: false, font: { size: 9, color: '#ef4444' },  xanchor: 'left', yref: 'paper' }
+        ],
+        font: { family: 'Inter, sans-serif' }
+    }, { responsive: true, displayModeBar: false });
+    document.getElementById('forest-md').on('plotly_click', function(data) {
+        if (data.points && data.points[0] && data.points[0].customdata) {
+            window.open(data.points[0].customdata, '_blank');
+        }
+    });
+}
+
+// ══════════════════════════════════════════════════
+//  NNT CHART
+// ══════════════════════════════════════════════════
+function renderNNT() {
+    const darkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const axColor = darkMode ? '#94a3b8' : '#475569';
+    const gridColor = darkMode ? 'rgba(30,41,59,0.6)' : 'rgba(203,213,225,0.6)';
+
+    const data = DRUG_CLASSES.filter(d => d.nnt != null).sort((a, b) => a.nnt - b.nnt);
+    Plotly.react('nnt-chart', [{
+        y: data.map(d => d.name),
+        x: data.map(d => d.nnt),
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+            color: data.map(d => d.color),
+            opacity: 0.85,
+            line: { color: 'rgba(255,255,255,0.15)', width: 1 }
+        },
+        text: data.map(d => 'NNT = ' + d.nnt),
+        textposition: 'outside',
+        textfont: { size: 10, color: axColor },
+        customdata: data.map(d => [d.file, d.indication]),
+        hovertemplate: '<b>%{y}</b><br>NNT: %{x}<br>%{customdata[1]}<extra></extra>'
+    }], {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        xaxis: { title: 'NNT (patients per prevented event)', color: axColor, gridcolor: gridColor, range: [0, Math.max(...data.map(d => d.nnt)) * 1.18] },
+        yaxis: { color: axColor, autorange: 'reversed', tickfont: { size: 11 } },
+        margin: { l: 195, r: 80, t: 10, b: 55 },
+        height: Math.max(300, data.length * 36 + 70),
+        font: { family: 'Inter, sans-serif' }
+    }, { responsive: true, displayModeBar: false });
+
+    document.getElementById('nnt-chart').on('plotly_click', function(ev) {
+        if (ev.points && ev.points[0] && ev.points[0].customdata) {
+            window.open(ev.points[0].customdata[0], '_blank');
+        }
+    });
+}
+
+// ══════════════════════════════════════════════════
+//  THERAPY AREA ACCORDION
+// ══════════════════════════════════════════════════
+function renderAccordion() {
+    const container = document.getElementById('therapy-accordion');
+    container.innerHTML = THERAPY_AREAS.map((area, idx) => {
+        const drugs = DRUG_CLASSES.filter(d => d.area === area.key);
+        const totalN = drugs.reduce((s, d) => s + d.n, 0);
+        return `<div class="glass rounded-xl overflow-hidden">
+            <div class="accordion-header ${idx === 0 ? 'open' : ''}" id="acc-hdr-${idx}" onclick="toggleAccordion(${idx})">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:${area.color}22; color:${area.color}">
+                        <i class="fa-solid ${escapeHtml(area.icon)} text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-sm">${escapeHtml(area.label)}</div>
+                        <div class="text-[10px]" style="color:var(--text-muted)">${escapeHtml(area.desc)} &mdash; ${drugs.length} drug class${drugs.length !== 1 ? 'es' : ''}, ${totalN.toLocaleString()} patients</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-down accordion-chevron text-xs" style="color:var(--text-muted)"></i>
+            </div>
+            <div class="accordion-body ${idx === 0 ? 'open' : 'closed'}" id="acc-body-${idx}">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+                    ${drugs.map(d => {
+                        const sig = isSig(d);
+                        const sigColor = sig ? '#10b981' : '#f59e0b';
+                        const lbl = effectLabel(d);
+                        const unit = d.isMD ? (' ' + (d.unit || 'mmHg')) : '';
+                        return `<div class="drug-card rounded-xl p-4" style="background:rgba(15,23,42,0.5); border-color:${d.color}33" onclick="window.open(${JSON.stringify(d.file)},'_blank')">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-2 h-2 rounded-full" style="background:${d.color}"></div>
+                                <span class="font-bold text-sm">${escapeHtml(d.name)}</span>
+                            </div>
+                            <div class="text-lg font-extrabold font-mono" style="color:${sigColor}">${lbl} ${d.hr.toFixed(2)}${unit}</div>
+                            <div class="text-xs" style="color:var(--text-muted)">(${d.lci.toFixed(2)}\u2013${d.uci.toFixed(2)}) k=${d.k}, N=${d.n.toLocaleString()}</div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold grade-${escapeHtml(d.grade.replace(' ','-'))}">${escapeHtml(d.grade)}</span>
+                                ${d.nnt != null ? `<span class="text-[9px]" style="color:var(--text-secondary)">NNT ${d.nnt}</span>` : ''}
+                            </div>
+                            <div class="text-[10px] mt-1.5" style="color:var(--text-muted)">${escapeHtml(d.source)}</div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleAccordion(idx) {
+    const hdr = document.getElementById('acc-hdr-' + idx);
+    const body = document.getElementById('acc-body-' + idx);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    body.classList.toggle('closed', isOpen);
+    hdr.classList.toggle('open', !isOpen);
+}
+
+// ══════════════════════════════════════════════════
+//  BUBBLE CHART
+// ══════════════════════════════════════════════════
+function renderBubble() {
+    const darkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const axColor = darkMode ? '#94a3b8' : '#475569';
+    const gridColor = darkMode ? 'rgba(30,41,59,0.6)' : 'rgba(203,213,225,0.6)';
+
+    // Only HR-scale for Y-axis comparison (exclude OR, MD)
+    const data = DRUG_CLASSES.filter(d => !d.isOR && !d.isMD);
+
+    const gradeGroups = ['HIGH','MODERATE','LOW','VERY LOW'];
+    const traces = gradeGroups.map(g => {
+        const group = data.filter(d => d.grade === g);
+        if (!group.length) return null;
+        const m = GRADE_META[g];
+        return {
+            x: group.map(d => d.n),
+            y: group.map(d => (1 - d.hr) * 100),
+            mode: 'markers',
+            name: g,
+            marker: {
+                size: group.map(d => 10 + d.k * 4),
+                color: group.map(d => d.color),
+                opacity: 0.75,
+                line: { color: 'rgba(255,255,255,0.2)', width: 1 }
+            },
+            text: group.map(d => d.name),
+            customdata: group.map(d => [d.file, d.k, d.n, d.nnt]),
+            hovertemplate: '<b>%{text}</b><br>N: %{x:,}<br>Risk Reduction: %{y:.1f}%<br>k: %{customdata[1]}<br>NNT: %{customdata[3]}<extra></extra>',
+            showlegend: true
+        };
+    }).filter(Boolean);
+
+    Plotly.react('bubble-chart', traces, {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        xaxis: {
+            title: 'Total Patients (log scale)',
+            type: 'log', color: axColor, gridcolor: gridColor
+        },
+        yaxis: {
+            title: '% Risk Reduction (1-HR)',
+            color: axColor, gridcolor: gridColor,
+            zeroline: true, zerolinecolor: '#64748b', zerolinewidth: 1
+        },
+        legend: {
+            bgcolor: 'transparent',
+            font: { color: axColor, size: 11 },
+            orientation: 'h', y: -0.15
+        },
+        margin: { l: 65, r: 30, t: 20, b: 80 },
+        height: 420,
+        font: { family: 'Inter, sans-serif' },
+        annotations: [{
+            x: 0.01, y: 0.99, xref: 'paper', yref: 'paper',
+            text: 'Bubble size \u221d k (number of trials)',
+            showarrow: false, font: { size: 10, color: axColor }, xanchor: 'left', yanchor: 'top'
+        }]
+    }, { responsive: true, displayModeBar: false });
+
+    document.getElementById('bubble-chart').on('plotly_click', function(ev) {
+        if (ev.points && ev.points[0] && ev.points[0].customdata) {
+            window.open(ev.points[0].customdata[0], '_blank');
+        }
+    });
+}
+
+// ══════════════════════════════════════════════════
+//  NETWORK (force-directed via Plotly scatter)
+// ══════════════════════════════════════════════════
+function renderNetwork() {
+    const darkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const axColor = darkMode ? '#94a3b8' : '#475569';
+
+    // Build adjacency by shared area
+    const nodes = DRUG_CLASSES.map((d, i) => ({ ...d, idx: i }));
+    const edges = [];
+    for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+            if (nodes[i].area === nodes[j].area) {
+                edges.push([i, j]);
+            }
+        }
+    }
+
+    // Simple force-directed layout using circular base + repulsion simulation
+    const N = nodes.length;
+    const positions = computeForceLayout(nodes, edges, N);
+
+    // Edge traces
+    const edgeX = [], edgeY = [];
+    edges.forEach(([i, j]) => {
+        edgeX.push(positions[i].x, positions[j].x, null);
+        edgeY.push(positions[i].y, positions[j].y, null);
+    });
+
+    const edgeTrace = {
+        x: edgeX, y: edgeY,
+        mode: 'lines',
+        line: { color: 'rgba(100,116,139,0.25)', width: 1.5 },
+        hoverinfo: 'none',
+        showlegend: false
+    };
+
+    const maxN = Math.max(...nodes.map(d => d.n));
+    const nodeTrace = {
+        x: positions.map(p => p.x),
+        y: positions.map(p => p.y),
+        mode: 'markers+text',
+        marker: {
+            size: nodes.map(d => 16 + (d.n / maxN) * 28),
+            color: nodes.map(d => d.color),
+            opacity: 0.85,
+            line: { color: 'rgba(255,255,255,0.25)', width: 1.5 }
+        },
+        text: nodes.map(d => d.name.length > 14 ? d.name.slice(0, 13) + '\u2026' : d.name),
+        textposition: 'top center',
+        textfont: { size: 9, color: darkMode ? '#cbd5e1' : '#334155' },
+        customdata: nodes.map(d => [d.file, d.n, d.grade, d.area, d.nnt]),
+        hovertemplate: '<b>%{customdata[3]}</b>: %{text}<br>N: %{customdata[1]:,}<br>GRADE: %{customdata[2]}<br>NNT: %{customdata[4]}<extra></extra>',
+        showlegend: false
+    };
+
+    Plotly.react('network-chart', [edgeTrace, nodeTrace], {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        xaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [-1.3, 1.3] },
+        yaxis: { showgrid: false, zeroline: false, showticklabels: false, scaleanchor: 'x', range: [-1.3, 1.3] },
+        margin: { l: 20, r: 20, t: 20, b: 20 },
+        height: 460,
+        font: { family: 'Inter, sans-serif' },
+        annotations: THERAPY_AREAS.map(area => {
+            const group = nodes.filter(d => d.area === area.key);
+            if (!group.length) return null;
+            const cx = group.reduce((s, d) => s + positions[d.idx].x, 0) / group.length;
+            const cy = group.reduce((s, d) => s + positions[d.idx].y, 0) / group.length;
+            return {
+                x: cx, y: cy - 0.18,
+                text: '<b>' + area.label + '</b>',
+                showarrow: false,
+                font: { size: 9, color: area.color },
+                bgcolor: 'rgba(0,0,0,0.0)'
+            };
+        }).filter(Boolean)
+    }, { responsive: true, displayModeBar: false });
+
+    document.getElementById('network-chart').on('plotly_click', function(ev) {
+        if (ev.points && ev.points[0] && ev.points[0].customdata) {
+            window.open(ev.points[0].customdata[0], '_blank');
+        }
+    });
+}
+
+function computeForceLayout(nodes, edges, N) {
+    // Initialize in sectors by area to keep related nodes close
+    const areaKeys = [...new Set(nodes.map(d => d.area))];
+    const pos = nodes.map((d, i) => {
+        const aIdx = areaKeys.indexOf(d.area);
+        const aCount = nodes.filter(n => n.area === d.area).length;
+        const posInArea = nodes.filter((n, ni) => n.area === d.area && ni < i).length;
+        const baseAngle = (aIdx / areaKeys.length) * 2 * Math.PI;
+        const spread = (posInArea / Math.max(aCount - 1, 1) - 0.5) * 0.5;
+        const r = 0.6 + (posInArea % 2) * 0.15;
+        return { x: r * Math.cos(baseAngle + spread), y: r * Math.sin(baseAngle + spread) };
+    });
+
+    // Simple spring simulation
+    for (let iter = 0; iter < 120; iter++) {
+        const forces = pos.map(() => ({ x: 0, y: 0 }));
+
+        // Repulsion between all node pairs
+        for (let i = 0; i < N; i++) {
+            for (let j = i + 1; j < N; j++) {
+                const dx = pos[i].x - pos[j].x;
+                const dy = pos[i].y - pos[j].y;
+                const dist2 = dx * dx + dy * dy + 0.001;
+                const repulse = 0.04 / dist2;
+                forces[i].x += dx * repulse;
+                forces[i].y += dy * repulse;
+                forces[j].x -= dx * repulse;
+                forces[j].y -= dy * repulse;
+            }
+        }
+
+        // Attraction along edges
+        edges.forEach(([i, j]) => {
+            const dx = pos[j].x - pos[i].x;
+            const dy = pos[j].y - pos[i].y;
+            const dist = Math.sqrt(dx * dx + dy * dy) + 0.001;
+            const attract = (dist - 0.32) * 0.04;
+            forces[i].x += dx / dist * attract;
+            forces[i].y += dy / dist * attract;
+            forces[j].x -= dx / dist * attract;
+            forces[j].y -= dy / dist * attract;
+        });
+
+        // Gravity to center
+        for (let i = 0; i < N; i++) {
+            forces[i].x -= pos[i].x * 0.02;
+            forces[i].y -= pos[i].y * 0.02;
+        }
+
+        // Apply
+        const damping = 0.85 - iter * 0.005;
+        for (let i = 0; i < N; i++) {
+            pos[i].x += forces[i].x * Math.max(damping, 0.1);
+            pos[i].y += forces[i].y * Math.max(damping, 0.1);
+        }
+    }
+
+    // Normalize to [-1, 1]
+    const xs = pos.map(p => p.x), ys = pos.map(p => p.y);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const yMin = Math.min(...ys), yMax = Math.max(...ys);
+    const xRange = xMax - xMin || 1, yRange = yMax - yMin || 1;
+    return pos.map(p => ({
+        x: ((p.x - xMin) / xRange) * 1.8 - 0.9,
+        y: ((p.y - yMin) / yRange) * 1.8 - 0.9
+    }));
+}
+
+// ══════════════════════════════════════════════════
+//  TABLE
+// ══════════════════════════════════════════════════
+function getTableData() {
+    const search = (document.getElementById('table-search').value || '').toLowerCase();
+    const gradeFilter = document.getElementById('table-grade-filter').value;
+
+    let data = DRUG_CLASSES.filter(d => {
+        const nameMatch = d.name.toLowerCase().includes(search) || d.indication.toLowerCase().includes(search);
+        const gradeMatch = !gradeFilter || d.grade === gradeFilter;
+        return nameMatch && gradeMatch;
+    });
+
+    const colMap = {
+        name: d => d.name,
+        indication: d => d.indication,
+        k: d => d.k,
+        n: d => d.n,
+        hr: d => d.hr,
+        i2: d => d.i2,
+        grade: d => ['HIGH','MODERATE','LOW','VERY LOW'].indexOf(d.grade),
+        nnt: d => d.nnt ?? 9999,
+        source: d => d.source
+    };
+
+    data.sort((a, b) => {
+        const fn = colMap[tableSortCol] || (d => d.name);
+        const va = fn(a), vb = fn(b);
+        if (typeof va === 'string') return tableSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        return tableSortDir === 'asc' ? va - vb : vb - va;
+    });
+
+    return data;
+}
+
+function renderTable() {
+    const data = getTableData();
+    const tbody = document.getElementById('table-body');
+    const empty = document.getElementById('table-empty');
+    const count = document.getElementById('table-count');
+
+    if (!data.length) {
+        tbody.innerHTML = '';
+        empty.classList.remove('hidden');
+        count.textContent = 'No results.';
+        return;
+    }
+    empty.classList.add('hidden');
+    count.textContent = 'Showing ' + data.length + ' of ' + DRUG_CLASSES.length + ' drug classes.';
+
+    tbody.innerHTML = data.map(d => {
+        const sig = isSig(d);
+        const sigClass = sig ? 'sig-row' : 'insig-row';
+        const lbl = effectLabel(d);
+        const unit = d.isMD ? (' ' + (d.unit || 'mmHg')) : '';
+        const sigColor = sig ? 'color:#10b981' : 'color:#f59e0b';
+        const gradeCls = 'grade-' + d.grade.replace(' ', '-');
+        return `<tr class="${sigClass}">
+            <td class="p-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${d.color}"></div>
+                    <div>
+                        <div class="font-bold text-sm">${escapeHtml(d.name)}</div>
+                        <div class="text-[9px]" style="color:var(--text-muted)">${escapeHtml(d.area)}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="p-3 text-xs" style="color:var(--text-secondary)">${escapeHtml(d.indication)}</td>
+            <td class="p-3 text-right font-mono text-sm">${d.k}</td>
+            <td class="p-3 text-right font-mono text-sm">${d.n.toLocaleString()}</td>
+            <td class="p-3 text-right font-mono text-sm font-bold" style="${sigColor}">${lbl} ${d.hr.toFixed(2)}${unit} (${d.lci.toFixed(2)}\u2013${d.uci.toFixed(2)})</td>
+            <td class="p-3 text-right font-mono text-sm">${d.i2.toFixed(0)}%</td>
+            <td class="p-3 text-center"><span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${gradeCls}">${escapeHtml(d.grade)}</span></td>
+            <td class="p-3 text-right font-mono text-sm">${d.nnt != null ? d.nnt : '<span style="color:var(--text-muted)">--</span>'}</td>
+            <td class="p-3 text-xs" style="color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(d.source)}">${escapeHtml(d.source)}</td>
+            <td class="p-3 text-center">
+                <a href="${escapeHtml(d.file)}" target="_blank" class="text-blue-400 hover:text-blue-300 text-xs font-semibold hover:underline">
+                    Open <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                </a>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function initTableSorting() {
+    document.querySelectorAll('#data-table th[data-col]').forEach(th => {
+        th.addEventListener('click', () => {
+            const col = th.getAttribute('data-col');
+            if (tableSortCol === col) {
+                tableSortDir = tableSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                tableSortCol = col;
+                tableSortDir = 'asc';
+            }
+            document.querySelectorAll('#data-table th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+            th.classList.add(tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+            renderTable();
+        });
+    });
+}
+
+// ══════════════════════════════════════════════════
+//  EXPORT CSV
+// ══════════════════════════════════════════════════
+function exportCSV() {
+    const headers = ['Drug/Intervention','Indication','Therapeutic Area','k','Total N','Effect Type','Effect','LCI','UCI','I2 (%)','GRADE','NNT','Source','App File'];
+    const rows = DRUG_CLASSES.map(d => [
+        d.name, d.indication, d.area, d.k, d.n,
+        effectLabel(d), d.hr, d.lci, d.uci,
+        d.i2, d.grade, d.nnt ?? '', d.source, d.file
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => {
+        const s = String(v ?? '');
+        // Sanitize formula injection (exclude leading = + @ but keep negatives for medical values)
+        const safe = /^[=+@\t\r]/.test(s) ? "'" + s : s;
+        return '"' + safe.replace(/"/g, '""') + '"';
+    }).join(',')).join('\r\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'RapidMeta_Cardiology_Evidence.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ══════════════════════════════════════════════════
+//  EVIDENCE PACK DOWNLOAD
+// ══════════════════════════════════════════════════
+function downloadEvidencePack() {
+    const pack = {
+        meta: {
+            title: 'RapidMeta Cardiology Evidence Pack',
+            generated: new Date().toISOString(),
+            version: '2.0',
+            total_drug_classes: DRUG_CLASSES.length,
+            total_patients: DRUG_CLASSES.reduce((s, d) => s + d.n, 0),
+            total_trials: DRUG_CLASSES.reduce((s, d) => s + d.k, 0)
+        },
+        grade_summary: (() => {
+            const counts = {};
+            DRUG_CLASSES.forEach(d => { counts[d.grade] = (counts[d.grade] || 0) + 1; });
+            return counts;
+        })(),
+        drug_classes: DRUG_CLASSES.map(d => ({
+            name: d.name,
+            file: d.file,
+            color: d.color,
+            effect_type: effectLabel(d),
+            effect: d.hr,
+            lci: d.lci,
+            uci: d.uci,
+            k: d.k,
+            n: d.n,
+            i2: d.i2,
+            grade: d.grade,
+            nnt: d.nnt,
+            indication: d.indication,
+            therapeutic_area: d.area,
+            source: d.source,
+            significant: isSig(d),
+            unit: d.unit || null
+        })),
+        benchmarks: {
+            most_efficient_nnt: (() => {
+                const withNNT = DRUG_CLASSES.filter(d => d.nnt != null).sort((a, b) => a.nnt - b.nnt);
+                return withNNT.length ? { drug: withNNT[0].name, nnt: withNNT[0].nnt } : null;
+            })(),
+            largest_trial: (() => {
+                const s = [...DRUG_CLASSES].sort((a, b) => b.n - a.n)[0];
+                return { drug: s.name, n: s.n };
+            })(),
+            highest_grade_significant: DRUG_CLASSES.filter(d => d.grade === 'HIGH' && isSig(d)).map(d => d.name),
+            significant_count: DRUG_CLASSES.filter(d => isSig(d)).length
+        }
+    };
+
+    const json = JSON.stringify(pack, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'RapidMeta_Evidence_Pack.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ══════════════════════════════════════════════════
+//  DARK / LIGHT MODE
+// ══════════════════════════════════════════════════
+function initTheme() {
+    const saved = localStorage.getItem('rm_dashboard_theme') || 'dark';
+    applyTheme(saved);
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('rm_dashboard_theme', theme);
+    const icon = document.getElementById('theme-icon');
+    icon.className = theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+
+    // Re-render charts with correct axis colors
+    setTimeout(() => {
+        renderForest();
+        renderNNT();
+        renderBubble();
+        renderNetwork();
+    }, 50);
+}
+
+// ══════════════════════════════════════════════════
+//  NAV ACTIVE STATE
+// ══════════════════════════════════════════════════
+function initScrollSpy() {
+    const sections = document.querySelectorAll('section[id]');
+    const links = document.querySelectorAll('.nav-link');
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                links.forEach(l => l.classList.remove('active'));
+                const link = document.querySelector('.nav-link[href="#' + entry.target.id + '"]');
+                if (link) link.classList.add('active');
+            }
+        });
+    }, { threshold: 0.25 });
+
+    sections.forEach(s => observer.observe(s));
+}
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+function init() {
+    initTheme();
+    renderHeroStats();
+    renderGradeBar();
+    renderDrugCards();
+    renderForest();
+    renderNNT();
+    renderAccordion();
+    renderBubble();
+    renderNetwork();
+    renderTable();
+    initTableSorting();
+    initScrollSpy();
+
+    // Set initial sort indicator
+    const defaultTh = document.querySelector('#data-table th[data-col="hr"]');
+    if (defaultTh) defaultTh.classList.add('sort-asc');
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Living Meta Library</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Central Copy Library</div>
+      <h1>Living Meta Library</h1>
+      <p>
+        This page browses the centralized copies under <code>C:\Living metas\Library</code>.
+        Use this when you want one organized folder in <code>C:\</code> without touching the source
+        projects. The originals atlas remains at <a href="index.html">index.html</a>.
+      </p>
+      <div class="nav-grid">
+        <a class="nav-card" href="index.html">
+          <div class="mini">Atlas</div>
+          <strong>Browse original source files</strong>
+          <div class="note">Go back to the original-file inventory across the project folders.</div>
+        </a>
+        <a class="nav-card" href="review.html">
+          <div class="mini">Review</div>
+          <strong>See the consolidation guidance</strong>
+          <div class="note">Read the review of what is current, what is archive, and what to use first.</div>
+        </a>
+        <a class="nav-card" href="file:///C:/Living%20metas/Library/Current">
+          <div class="mini">Folder</div>
+          <strong>Open current library folder</strong>
+          <div class="note">Jump directly into the copied current working set on disk.</div>
+        </a>
+      </div>
+      <div class="hero-stats" id="heroStats"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Quick Filter</h2>
+          <p class="muted">Filter the centralized copies by category, group, or filename.</p>
+        </div>
+      </div>
+      <div class="controls">
+        <select id="categoryFilter">
+          <option value="all">All categories</option>
+        </select>
+        <input id="searchInput" type="search" placeholder="Search current, submission, finerenone, teer, pfa, watchman...">
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Category Summary</h2>
+          <p class="muted">Current is the copied working set. Submission, backup, scratch, and legacy stay separated.</p>
+        </div>
+      </div>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Centralized Copies</h2>
+          <p class="muted">Each card links to both the copied file and the original source file.</p>
+        </div>
+      </div>
+      <div class="groups" id="groupSections"></div>
+    </section>
+  </main>
+  <script src="library.js"></script>
+  <script>
+    const libraryData = window.LIVING_META_LIBRARY || { generatedAt: "", items: [] };
+
+    const refs = {
+      heroStats: document.getElementById("heroStats"),
+      categoryFilter: document.getElementById("categoryFilter"),
+      searchInput: document.getElementById("searchInput"),
+      summaryGrid: document.getElementById("summaryGrid"),
+      groupSections: document.getElementById("groupSections")
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function formatDate(value) {
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return value;
+      return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(date);
+    }
+
+    function formatPath(path) {
+      return String(path ?? "").replaceAll("\\\\", "\\");
+    }
+
+    function toFileUrl(path) {
+      return `file:///${String(path ?? "").replace(/\\/g, "/").replace(/ /g, "%20")}`;
+    }
+
+    function buildStats(items) {
+      const current = items.filter(item => item.category === "Current").length;
+      const submission = items.filter(item => item.category === "Submission").length;
+      const archive = items.filter(item => item.category === "Backup" || item.category === "Scratch" || item.category === "Legacy").length;
+      return [
+        { label: "Copied files", value: items.length, note: `Generated ${formatDate(libraryData.generatedAt)}` },
+        { label: "Current", value: current, note: "Copied working-set files grouped for primary use" },
+        { label: "Submission", value: submission, note: "Packaged export copies kept separate" },
+        { label: "Archive", value: archive, note: "Backup, scratch, and legacy copies held outside the current set" }
+      ];
+    }
+
+    function renderHero(items) {
+      refs.heroStats.innerHTML = buildStats(items).map(stat => `
+        <div class="stat-card">
+          <div class="mini">${escapeHtml(stat.label)}</div>
+          <div class="value">${escapeHtml(stat.value)}</div>
+          <div class="note">${escapeHtml(stat.note)}</div>
+        </div>
+      `).join("");
+    }
+
+    function populateFilter(items) {
+      const categories = [...new Set(items.map(item => item.category))].sort((a, b) => a.localeCompare(b));
+      refs.categoryFilter.innerHTML = [
+        '<option value="all">All categories</option>',
+        ...categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`)
+      ].join("");
+    }
+
+    function summarize(items) {
+      const byCategory = new Map();
+      items.forEach(item => {
+        if (!byCategory.has(item.category)) byCategory.set(item.category, []);
+        byCategory.get(item.category).push(item);
+      });
+      refs.summaryGrid.innerHTML = [...byCategory.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([category, rows]) => `
+        <article class="summary-card">
+          <div class="mini">${escapeHtml(category)}</div>
+          <div class="value">${rows.length}</div>
+          <div class="note">${escapeHtml([...new Set(rows.map(row => row.group))].join(" | "))}</div>
+        </article>
+      `).join("");
+    }
+
+    function filterItems() {
+      const category = refs.categoryFilter.value;
+      const query = refs.searchInput.value.trim().toLowerCase();
+      return libraryData.items.filter(item => {
+        if (category !== "all" && item.category !== category) return false;
+        if (!query) return true;
+        return [
+          item.name,
+          item.group,
+          item.originalPath,
+          item.copyPath,
+          item.sourceRoot
+        ].some(value => String(value).toLowerCase().includes(query));
+      });
+    }
+
+    function renderGroups(items) {
+      const grouped = new Map();
+      items.forEach(item => {
+        const key = `${item.category}|||${item.group}`;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(item);
+      });
+
+      refs.groupSections.innerHTML = [...grouped.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([key, rows]) => {
+          const [category, group] = key.split("|||");
+          return `
+            <section class="group-card">
+              <div class="group-head">
+                <div>
+                  <div class="mini">${escapeHtml(category)}</div>
+                  <h3>${escapeHtml(group)}</h3>
+                </div>
+                <div class="pill">${rows.length} files</div>
+              </div>
+              <div class="file-grid">
+                ${rows.sort((a, b) => b.lastWriteIso.localeCompare(a.lastWriteIso) || a.copyName.localeCompare(b.copyName)).map(item => `
+                  <article class="file-card">
+                    <div class="card-top">
+                      <strong>${escapeHtml(item.copyName)}</strong>
+                      <span class="pill">${escapeHtml(item.kind)}</span>
+                    </div>
+                    <div class="note">Modified ${escapeHtml(formatDate(item.lastWriteIso))} | ${escapeHtml(item.sizeLabel)}</div>
+                    <div class="path">Copy: ${escapeHtml(formatPath(item.copyPath))}</div>
+                    <div class="path">Source: ${escapeHtml(formatPath(item.originalPath))}</div>
+                    <div class="actions">
+                      <a href="${escapeHtml(toFileUrl(item.copyPath))}">Open copy</a>
+                      <a href="${escapeHtml(toFileUrl(item.originalPath))}">Open original</a>
+                      <a href="${escapeHtml(toFileUrl(item.copyPath.replace(/\\[^\\]+$/, "")))}">Open copy folder</a>
+                    </div>
+                  </article>
+                `).join("")}
+              </div>
+            </section>
+          `;
+        }).join("");
+    }
+
+    function render() {
+      const filtered = filterItems();
+      renderHero(libraryData.items);
+      summarize(filtered);
+      renderGroups(filtered);
+    }
+
+    refs.categoryFilter.addEventListener("change", render);
+    refs.searchInput.addEventListener("input", render);
+
+    populateFilter(libraryData.items);
+    render();
+  </script>
+</body>
+</html>
