@@ -1,77 +1,92 @@
+# sentinel:skip-file - rebuilds portable library metadata from repo-local copies.
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
-$base = "C:\Living metas"
+$base = $PSScriptRoot
 $library = Join-Path $base "Library"
-$inventoryPath = Join-Path $base "inventory.json"
 
-if (-not (Test-Path $inventoryPath)) {
-  throw "Missing inventory.json. Run rebuild-organized.ps1 first."
+if (-not (Test-Path $library)) {
+  throw "Missing Library directory at $library"
 }
 
-if (Test-Path $library) {
-  Remove-Item -Path $library -Recurse -Force
-}
-New-Item -ItemType Directory -Force -Path $library | Out-Null
+function Write-Utf8NoBom {
+  param(
+    [string]$Path,
+    [string]$Content
+  )
 
-$inventory = Get-Content $inventoryPath -Raw | ConvertFrom-Json
-$items = @($inventory.items)
-
-function Safe-Name($value) {
-  return ($value -replace '[<>:"/\\|?*]', " - ").Trim()
+  $encoding = New-Object System.Text.UTF8Encoding($false)
+  [System.IO.File]::WriteAllText($Path, $Content, $encoding)
 }
 
-$manifest = foreach ($item in $items) {
-  $source = [string]$item.originalPath
-  if (-not (Test-Path $source)) { continue }
+function Get-RelativeRepoPath {
+  param([string]$AbsolutePath)
 
-  $categoryFolder = Join-Path $library (Safe-Name ([string]$item.category))
-  $groupFolder = Join-Path $categoryFolder (Safe-Name ([string]$item.group))
-  New-Item -ItemType Directory -Force -Path $groupFolder | Out-Null
-
-  $stem = [System.IO.Path]::GetFileNameWithoutExtension([string]$item.name)
-  $ext = [System.IO.Path]::GetExtension([string]$item.name)
-  $copyStem = if ([string]$item.category -eq "Submission" -or [string]$item.category -eq "Backup" -or [string]$item.category -eq "Scratch") {
-    $relative = $source.Replace([string]$item.sourceRoot, "").TrimStart("\")
-    $parts = $relative.Split("\")
-    if ($parts.Count -gt 1) { ($parts[0..($parts.Count - 2)] + $stem) -join " -- " } else { $stem }
+  $baseUri = New-Object System.Uri(([System.IO.Path]::GetFullPath($base).TrimEnd("\") + "\"))
+  $targetPath = [System.IO.Path]::GetFullPath($AbsolutePath)
+  $targetItem = Get-Item -LiteralPath $targetPath
+  $targetUri = if ($targetItem.PSIsContainer) {
+    New-Object System.Uri(($targetPath.TrimEnd("\") + "\"))
   } else {
-    $stem
-  }
-  $copyName = (Safe-Name $copyStem) + $ext
-  $copyPath = Join-Path $groupFolder $copyName
-
-  if (Test-Path $copyPath) {
-    $hash = [System.IO.Path]::GetFileNameWithoutExtension([string]$item.shortcutPath)
-    $copyName = (Safe-Name ($copyStem + " -- " + $hash)) + $ext
-    $copyPath = Join-Path $groupFolder $copyName
+    New-Object System.Uri($targetPath)
   }
 
-  Copy-Item -Path $source -Destination $copyPath -Force
+  return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString())
+}
 
-  [pscustomobject]@{
-    name = $item.name
-    category = $item.category
-    group = $item.group
-    kind = $item.kind
-    sourceRoot = $item.sourceRoot
-    originalPath = $source
-    copyPath = $copyPath
-    copyName = $copyName
-    lastWriteIso = $item.lastWriteIso
-    sizeBytes = $item.sizeBytes
-    sizeLabel = $item.sizeLabel
+function Get-Kind {
+  param(
+    [string]$Category,
+    [string]$Group,
+    [string]$Name
+  )
+
+  if ($Category -eq "Submission") { return "Submission" }
+  if ($Category -eq "Backup") { return "Backup" }
+  if ($Category -eq "Scratch") { return "Scratch" }
+  if ($Category -eq "Legacy") { return "Legacy" }
+  if ($Group -in @("ESC ACS Support", "Finrenone Support", "TEER Support")) { return "Support" }
+  if ($Name -match "^(dashboard|test-runner|r-validation-runner|TrialRadar|MetaExtract|META_DASHBOARD|AutoGRADE|AutoManuscript)\.html$") { return "Support" }
+  if ($Name -eq "index.html" -or $Name -match "living-meta-engine|living-meta-complete|living-meta-standalone|LivingMeta|LIVING_META|PFA_AF_LivingMeta|TEER_LIVING_META") { return "App" }
+  if ($Name -match "_REVIEW") { return "Review" }
+  return "HTML"
+}
+
+$items = foreach ($categoryDir in Get-ChildItem -Path $library -Directory | Sort-Object Name) {
+  $category = $categoryDir.Name
+
+  foreach ($groupDir in Get-ChildItem -Path $categoryDir.FullName -Directory | Sort-Object Name) {
+    $group = $groupDir.Name
+
+    foreach ($file in Get-ChildItem -Path $groupDir.FullName -File -Filter *.html | Sort-Object Name) {
+      $relativePath = Get-RelativeRepoPath $file.FullName
+
+      [pscustomobject]@{
+        name = $file.Name
+        category = $category
+        group = $group
+        kind = Get-Kind $category $group $file.Name
+        sourceRoot = Get-RelativeRepoPath $groupDir.FullName
+        originalPath = $relativePath
+        copyPath = $relativePath
+        copyName = $file.Name
+        folderPath = Get-RelativeRepoPath $groupDir.FullName
+        lastWriteIso = $file.LastWriteTime.ToString("o")
+        sizeBytes = [int64]$file.Length
+        sizeLabel = ("{0:N1} KB" -f ($file.Length / 1KB))
+      }
+    }
   }
 }
 
 $payload = [pscustomobject]@{
   generatedAt = (Get-Date).ToString("o")
-  items = @($manifest | Sort-Object category, group, copyName)
+  items = @($items | Sort-Object category, group, copyName)
 }
 
-$manifestJson = $payload | ConvertTo-Json -Depth 6
-Set-Content -Path (Join-Path $base "library-manifest.json") -Value $manifestJson -Encoding UTF8
-$manifestJs = "window.LIVING_META_LIBRARY = " + $manifestJson + ";"
-Set-Content -Path (Join-Path $base "library.js") -Value $manifestJs -Encoding UTF8
+$json = $payload | ConvertTo-Json -Depth 6
+Write-Utf8NoBom -Path (Join-Path $base "library-manifest.json") -Content $json
+Write-Utf8NoBom -Path (Join-Path $base "library.js") -Content ("window.LIVING_META_LIBRARY = " + $json + ";")
 
-Write-Output "Rebuilt library at $library"
-$manifest | Group-Object category | Sort-Object Name | ForEach-Object { "{0}: {1}" -f $_.Name, $_.Count }
+Write-Output "Rebuilt portable library manifest from $library"
+$items | Group-Object category | Sort-Object Name | ForEach-Object { "{0}: {1}" -f $_.Name, $_.Count }
