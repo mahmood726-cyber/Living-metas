@@ -13,9 +13,9 @@
       <div class="eyebrow">Central Copy Library</div>
       <h1>Living Meta Library</h1>
       <p>
-        This page browses the centralized copies under <code>C:\Living metas\Library</code>.
-        Use this when you want one organized folder in <code>C:\</code> without touching the source
-        projects. The originals atlas remains at <a href="index.html">index.html</a>.
+        This page browses the centralized copies under <code>Library/</code>.
+        Use this when you want one organized working bundle inside the repo without touching the
+        source project lines. The source atlas remains at <a href="index.html">index.html</a>.
       </p>
       <div class="nav-grid">
         <a class="nav-card" href="index.html">
@@ -28,10 +28,10 @@
           <strong>See the consolidation guidance</strong>
           <div class="note">Read the review of what is current, what is archive, and what to use first.</div>
         </a>
-        <a class="nav-card" href="file:///C:/Living%20metas/Library/Current">
-          <div class="mini">Folder</div>
-          <strong>Open current library folder</strong>
-          <div class="note">Jump directly into the copied current working set on disk.</div>
+        <a class="nav-card" href="library.html?category=Current">
+          <div class="mini">Current</div>
+          <strong>Open current working set</strong>
+          <div class="note">Jump directly into the copied current shelf grouped by project line.</div>
         </a>
       </div>
       <div class="hero-stats" id="heroStats"></div>
@@ -104,8 +104,28 @@
       return String(path ?? "").replaceAll("\\\\", "\\");
     }
 
-    function toFileUrl(path) {
-      return `file:///${String(path ?? "").replace(/\\/g, "/").replace(/ /g, "%20")}`;
+    function toRepoHref(path) {
+      return encodeURI(String(path ?? "").replace(/\\/g, "/"));
+    }
+
+    function buildFilterUrl(category, search) {
+      const params = new URLSearchParams();
+      if (category && category !== "all") params.set("category", category);
+      if (search) params.set("search", search);
+      const query = params.toString();
+      return query ? `library.html?${query}` : "library.html";
+    }
+
+    function applyInitialState() {
+      const params = new URLSearchParams(window.location.search);
+      const category = params.get("category");
+      const search = params.get("search");
+      if (category && [...refs.categoryFilter.options].some(option => option.value === category)) {
+        refs.categoryFilter.value = category;
+      }
+      if (search) {
+        refs.searchInput.value = search;
+      }
     }
 
     function buildStats(items) {
@@ -201,9 +221,9 @@
                     <div class="path">Copy: ${escapeHtml(formatPath(item.copyPath))}</div>
                     <div class="path">Source: ${escapeHtml(formatPath(item.originalPath))}</div>
                     <div class="actions">
-                      <a href="${escapeHtml(toFileUrl(item.copyPath))}">Open copy</a>
-                      <a href="${escapeHtml(toFileUrl(item.originalPath))}">Open original</a>
-                      <a href="${escapeHtml(toFileUrl(item.copyPath.replace(/\\[^\\]+$/, "")))}">Open copy folder</a>
+                      <a href="${escapeHtml(toRepoHref(item.copyPath))}">Open copy</a>
+                      <a href="${escapeHtml(toRepoHref(item.originalPath))}">Open original</a>
+                      <a href="${escapeHtml(buildFilterUrl(item.category, item.group))}">Open shelf</a>
                     </div>
                   </article>
                 `).join("")}
@@ -224,6 +244,7 @@
     refs.searchInput.addEventListener("input", render);
 
     populateFilter(libraryData.items);
+    applyInitialState();
     render();
   </script>
 </body>

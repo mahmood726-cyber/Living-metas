@@ -10,13 +10,12 @@
 <body>
   <main>
     <section class="hero">
-      <div class="eyebrow">C Drive Organizer</div>
+      <div class="eyebrow">Portable Atlas</div>
       <h1>Living Meta File Atlas</h1>
       <p>
-        This page centralizes the single-file living-meta HTMLs still present on <code>C:\</code>.
-        The source files remain in their original project folders. The organizer now adds three layers:
-        a searchable originals atlas, grouped shortcut folders under <code>C:\Living metas\Organized</code>,
-        and a full copy-based library under <code>C:\Living metas\Library</code>.
+        This page centralizes the single-file living-meta HTMLs tracked in this repo.
+        The portable bundle now exposes three layers: a searchable source atlas, grouped shortcut-style
+        launchers under <code>Organized/</code>, and a full copy-based library under <code>Library/</code>.
       </p>
       <div class="nav-grid">
         <a class="nav-card" href="transparency-review.html">
@@ -32,12 +31,12 @@
         <a class="nav-card" href="library.html">
           <div class="mini">Library</div>
           <strong>Browse copied working set</strong>
-          <div class="note">Open the centralized copies in <code>C:\Living metas\Library</code>.</div>
+          <div class="note">Browse the centralized copies preserved under <code>Library/</code>.</div>
         </a>
-        <a class="nav-card" href="file:///C:/Living%20metas/Library/Current">
+        <a class="nav-card" href="library.html?category=Current">
           <div class="mini">Current</div>
-          <strong>Open current library folder</strong>
-          <div class="note">Jump straight into the copied current set grouped by project line.</div>
+          <strong>Open current working set</strong>
+          <div class="note">Jump straight into the copied current shelf grouped by project line.</div>
         </a>
       </div>
       <div class="hero-stats" id="heroStats"></div>
@@ -108,6 +107,22 @@
 
     function formatPath(path) {
       return path.replaceAll("\\\\", "\\");
+    }
+
+    function toRepoHref(path) {
+      return encodeURI(String(path ?? "").replace(/\\/g, "/"));
+    }
+
+    function applyInitialState() {
+      const params = new URLSearchParams(window.location.search);
+      const category = params.get("category");
+      const search = params.get("search");
+      if (category && [...refs.categoryFilter.options].some(option => option.value === category)) {
+        refs.categoryFilter.value = category;
+      }
+      if (search) {
+        refs.searchInput.value = search;
+      }
     }
 
     function buildStats(items) {
@@ -202,7 +217,7 @@
                     <div class="note">Modified ${escapeHtml(formatDate(item.lastWriteIso))} | ${escapeHtml(item.sizeLabel)}</div>
                     <div class="path">${escapeHtml(formatPath(item.originalPath))}</div>
                     <div class="actions">
-                      <a href="${escapeHtml(item.launchUrl)}">Open original</a>
+                      <a href="${escapeHtml(toRepoHref(item.launchUrl))}">Open original</a>
                       <a href="${escapeHtml(item.folderUrl)}">Open folder</a>
                     </div>
                     <div class="note">Shortcut folder: ${escapeHtml(item.organizedFolder)}</div>
@@ -225,6 +240,7 @@
     refs.searchInput.addEventListener("input", render);
 
     populateFilter(inventoryData.items);
+    applyInitialState();
     render();
   </script>
 </body>

@@ -87,9 +87,10 @@
       <h1>Living Meta Consolidation Review</h1>
       <p>
         The living-meta work is no longer missing. It is fragmented. The main issue is duplication across
-        active project folders, `e156-submission` bundles, backup copies, and rough scratch variants.
-        The right operating model is a central library in <code>C:\Living metas</code> while leaving the
-        source projects intact.
+        active project folders, <code>e156-submission</code> bundles, backup copies, and rough scratch variants.
+        The right operating model is a portable library rooted in this repo: <code>Library/</code> for copied
+        working sets and <code>Organized/</code> for shortcut-style launchers, while leaving the source
+        projects intact.
       </p>
       <div class="grid">
         <div class="mini-card">
@@ -114,10 +115,10 @@
       <h2>Control Center</h2>
       <ul>
         <li><a href="index.html">Living Meta File Atlas</a> tracks the original source files where they currently live.</li>
-        <li><a href="library.html">Living Meta Library</a> browses the centralized copies under <code>C:\Living metas\Library</code>.</li>
+        <li><a href="library.html">Living Meta Library</a> browses the centralized copies under <code>Library/</code>.</li>
         <li><a href="transparency-review.html">Living Meta Transparency Review</a> records the multi-persona audit, portfolio gaps, and published-meta benchmarks.</li>
-        <li><a href="file:///C:/Living%20metas/Library/Current">Open Current Library Folder</a> jumps directly into the copied current working set.</li>
-        <li><a href="file:///C:/Living%20metas/Organized">Open Organized Shortcuts</a> opens the grouped shortcut folders for the original files.</li>
+        <li><a href="library.html?category=Current">Open Current Library View</a> jumps directly into the copied current working set.</li>
+        <li><a href="index.html?category=Current">Open Current Source Atlas</a> shows the grouped launchers for the current originals.</li>
       </ul>
     </section>
 
@@ -126,20 +127,20 @@
       <ul>
         <li>The largest duplication pressure is in the Finrenone line: current reviews, living-meta copies, support tools, submission copies, and backups all coexist.</li>
         <li>The TEER, PFA AF, ESC/ACS, Watchman/Amulet, and living-meta-engine files are much cleaner and can act as canonical current assets.</li>
-        <li>`e156-submission` directories are valuable for packaged export, but they should be treated as archive outputs, not primary working files.</li>
-        <li>The old root copy <a href="file:///C:/Living%20metas/FINERENONE_REVIEW.html">FINERENONE_REVIEW.html</a> is now a legacy copy. The more current source is <a href="file:///C:/Projects/Finrenone/FINERENONE_REVIEW.html">C:\Projects\Finrenone\FINERENONE_REVIEW.html</a>.</li>
+        <li><code>e156-submission</code> directories are valuable for packaged export, but they should be treated as archive outputs, not primary working files.</li>
+        <li>The old root-style Finrenone copy now lives in <code>Library/Legacy/Legacy Root Copies/FINERENONE_REVIEW.html</code>; the canonical current review lives in <code>Library/Current/Finrenone Reviews/FINERENONE_REVIEW.html</code>.</li>
       </ul>
     </section>
 
     <section class="card">
       <h2>Recommended Canonical Working Set</h2>
       <ul>
-        <li>Finerenone review family from <code>C:\Projects\Finrenone</code></li>
-        <li>Tricuspid TEER living meta from <code>C:\Projects\Tricuspid_TEER_LivingMeta</code></li>
-        <li>PFA AF living meta from <code>C:\Projects\PFA_AF_LivingMeta</code></li>
-        <li>ESC ACS living meta from <code>C:\Projects\esc-acs-living-meta</code></li>
-        <li>Watchman/Amulet from <code>C:\Projects\LivingMeta_Watchman_Amulet</code></li>
-        <li>Living-meta app and engine from <code>C:\HTML apps\living-meta</code> and <code>C:\Projects\living-meta-engine</code></li>
+        <li>Finerenone review family from <code>Library/Current/Finrenone Reviews/</code></li>
+        <li>Tricuspid TEER living meta from <code>Library/Current/Tricuspid TEER Living Meta/</code></li>
+        <li>PFA AF living meta from <code>Library/Current/PFA AF Living Meta/</code></li>
+        <li>ESC ACS living meta from <code>Library/Current/ESC ACS Living Meta/</code></li>
+        <li>Watchman/Amulet from <code>Library/Current/Watchman and Amulet/</code></li>
+        <li>Living-meta app and engine from <code>Library/Current/Living Meta App/</code> and <code>Library/Current/Living Meta Engine/</code></li>
       </ul>
     </section>
 
@@ -147,9 +148,9 @@
       <h2>What Changed</h2>
       <ul>
         <li>A centralized shortcut index lives at <a href="index.html">Living Meta File Atlas</a>.</li>
-        <li>A real copy-based library now lives under <code>C:\Living metas\Library</code> and is browsable from <a href="library.html">Living Meta Library</a>.</li>
-        <li>Shortcuts remain under <code>C:\Living metas\Organized</code> for direct navigation to original files.</li>
-        <li>Rebuild scripts are available at <code>C:\Living metas\rebuild-organized.ps1</code> and <code>C:\Living metas\rebuild-library.ps1</code>.</li>
+        <li>A real copy-based library now lives under <code>Library/</code> and is browsable from <a href="library.html">Living Meta Library</a>.</li>
+        <li>Shortcut-style launchers remain under <code>Organized/</code> for direct navigation to the mirrored files.</li>
+        <li>Rebuild scripts are available at <code>rebuild-organized.ps1</code> and <code>rebuild-library.ps1</code>.</li>
       </ul>
     </section>
   </main>

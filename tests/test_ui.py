@@ -43,11 +43,12 @@ class LivingMetaUiContracts(unittest.TestCase):
         inventory_js = (REPO_ROOT / "inventory.js").read_text(encoding="utf-8")
         index_html = (REPO_ROOT / "index.html").read_text(encoding="utf-8")
         library_html = (REPO_ROOT / "library.html").read_text(encoding="utf-8")
+        review_html = (REPO_ROOT / "review.html").read_text(encoding="utf-8")
 
         self.assertTrue(library_js.startswith("window.LIVING_META_LIBRARY = "))
         self.assertTrue(inventory_js.startswith("window.LIVING_META_INVENTORY = "))
 
-        for text in (library_js, inventory_js, index_html, library_html):
+        for text in (library_js, inventory_js, index_html, library_html, review_html):
             self.assertNotIn("C:\\Living metas", text)
             self.assertNotIn("C:\\Projects", text)
             self.assertNotIn("file:///C:/", text)
