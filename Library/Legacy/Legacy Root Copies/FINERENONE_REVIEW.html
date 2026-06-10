@@ -2078,7 +2078,7 @@
                 }
                 const labelNames = { default: 'MACE (default)', MACE: 'CV Composite (MACE)', Renal40: 'Renal Composite (eGFR \u226540%)', Renal57: 'Renal Composite (eGFR \u226557%)', ACM: 'All-Cause Mortality', ACH: 'All-Cause Hospitalization', Hyperkalemia: 'Hyperkalemia' };
                 const current = this.state.selectedOutcome ?? 'default';
-                sel.innerHTML = [...allLabels].map(k => `<option value="${escapeHtml(k)}"${k === current ? ' selected' : ''}>${escapeHtml(labelNames[k] ?? k)}</option>`).join('');
+                sel.innerHTML=[...allLabels].map(k=>[k,labelNames[k] ?? k]).filter((p,i,a)=>a.findIndex(q=>q[1]===p[1])===i).map(p=>`<option value="${escapeHtml(p[0])}"${p[0]===current?' selected':''}>${escapeHtml(p[1])}</option>`).join('');
             },
             renderAuditLog() {
                 const container = document.getElementById('audit-log-entries');

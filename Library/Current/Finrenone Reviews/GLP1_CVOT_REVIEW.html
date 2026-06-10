@@ -3428,7 +3428,7 @@
                 const mode = this.state.effectMeasure ?? 'OR';
                 const modeEligibleCount = (this.state.trials ?? []).filter(t => this._isModeEligibleForOutcomeCount(t, mode, 'default')).length;
                 const isHRMode = mode === 'HR';
-                sel.innerHTML = [...allLabels].map(k => {
+                sel.innerHTML = [...allLabels].map(k=>[k,(typeof labelNames!=='undefined'&&labelNames[k]!=null)?labelNames[k]:(this.outcomeLabel?this.outcomeLabel(k):k)]).filter((p,i,a)=>a.findIndex(q=>q[1]===p[1])===i).map(p=>p[0]).map(k=>{
                     const count = this._outcomeAvailabilityCount(k, mode);
                     let label = `${labelNames[k] ?? k} (${count}/${modeEligibleCount})`;
                     if (!isHRMode && count === 0) {
