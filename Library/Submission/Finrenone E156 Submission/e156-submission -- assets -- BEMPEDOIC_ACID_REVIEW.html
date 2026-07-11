@@ -2128,7 +2128,7 @@ const ContinuousMDEngine = {
         return {
             k, n: trials.reduce((a,b)=>(a+(b.data?.tN||0)+(b.data?.cN||0)),0).toLocaleString(), 
             or: pMD.toFixed(2), lci: lci, uci: uci,
-            pOR: pMD, I2: I2, Q: Q, df: df, tau2: tau2,
+            pOR: pMD, I2: I2, i2: I2.toFixed(1), Q: Q, df: df, tau2: tau2,
             confLevel: confLevel,
             hksjLCI: NaN, hksjUCI: NaN, piLCI: NaN, piUCI: NaN,
             qPvalue: chi2Pvalue(Q, df),
